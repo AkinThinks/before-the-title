@@ -33,6 +33,10 @@ export default function GeneratingScreen() {
 
         const data = await res.json();
 
+        if (!res.ok || !data.artworkUrl) {
+          throw new Error(data.error || "Artwork generation failed");
+        }
+
         if (data.artworkUrl) {
           sessionStorage.setItem("artworkUrl", data.artworkUrl);
           sessionStorage.setItem("submissionId", data.submissionId);
@@ -45,9 +49,11 @@ export default function GeneratingScreen() {
           );
         }
       } catch {
-        // If generation fails, use placeholder
-        sessionStorage.setItem("artworkUrl", "/placeholder-artwork.jpg");
+        // If generation fails, use a real bundled fallback image.
+        sessionStorage.setItem("artworkUrl", "/art/abstract.jpg");
         sessionStorage.setItem("submissionId", "demo-" + Date.now());
+        sessionStorage.removeItem("galleryUrl");
+        sessionStorage.setItem("qrEmbedded", "false");
       }
 
       clearInterval(interval);

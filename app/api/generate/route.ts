@@ -168,13 +168,17 @@ async function persistImage(
   originalArtworkUrl: string | null;
   qrEmbedded: boolean;
 }> {
-  const dataUri = `data:image/png;base64,${b64}`;
+  const fallbackArtworkUrl = generatePlaceholderArtwork(submissionId);
 
   // Upload with the service-role client (falls back to the public client if no
   // secret key is set, which requires a permissive storage policy).
   const storage = supabaseAdmin || supabase;
   if (!storage) {
-    return { artworkUrl: dataUri, originalArtworkUrl: null, qrEmbedded: false };
+    return {
+      artworkUrl: fallbackArtworkUrl,
+      originalArtworkUrl: null,
+      qrEmbedded: false,
+    };
   }
 
   try {
@@ -209,7 +213,11 @@ async function persistImage(
 
     if (finalError) {
       console.error("Supabase artwork upload error:", finalError.message);
-      return { artworkUrl: dataUri, originalArtworkUrl: null, qrEmbedded: false };
+      return {
+        artworkUrl: fallbackArtworkUrl,
+        originalArtworkUrl: null,
+        qrEmbedded: false,
+      };
     }
 
     const { data: finalData } = storage.storage
@@ -220,13 +228,17 @@ async function persistImage(
       .getPublicUrl(originalPath);
 
     return {
-      artworkUrl: finalData.publicUrl || dataUri,
+      artworkUrl: finalData.publicUrl || fallbackArtworkUrl,
       originalArtworkUrl: originalError ? null : originalData.publicUrl || null,
       qrEmbedded,
     };
   } catch (e) {
     console.error("Image persist error:", e);
-    return { artworkUrl: dataUri, originalArtworkUrl: null, qrEmbedded: false };
+    return {
+      artworkUrl: fallbackArtworkUrl,
+      originalArtworkUrl: null,
+      qrEmbedded: false,
+    };
   }
 }
 

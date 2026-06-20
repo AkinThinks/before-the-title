@@ -10,6 +10,7 @@ export default function ArtworkScreen() {
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const router = useRouter();
 
@@ -87,6 +88,12 @@ export default function ArtworkScreen() {
                   sizes="(max-width: 640px) 100vw, 448px"
                   className="object-cover"
                   unoptimized
+                  onError={() => {
+                    if (!imageFailed) {
+                      setImageFailed(true);
+                      setArtworkUrl("/art/abstract.jpg");
+                    }
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
               </div>
