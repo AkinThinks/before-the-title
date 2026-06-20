@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { motion } from "framer-motion";
+
+const PW_KEY = "btt_admin_pw";
 
 interface Submission {
   id: string;
@@ -35,16 +37,31 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  // Simple password gate (enforced by the API when ADMIN_PASSWORD is set).
+  const [authed, setAuthed] = useState(false);
+  const [pwInput, setPwInput] = useState("");
+  const [authError, setAuthError] = useState(false);
+
   const fetchData = useCallback(async () => {
+    const pw =
+      typeof window !== "undefined" ? sessionStorage.getItem(PW_KEY) || "" : "";
     try {
       const [listRes, statsRes] = await Promise.all([
-        fetch("/api/admin?action=list"),
-        fetch("/api/admin?action=stats"),
+        fetch("/api/admin?action=list", { headers: { "x-admin-password": pw } }),
+        fetch("/api/admin?action=stats", { headers: { "x-admin-password": pw } }),
       ]);
+      if (listRes.status === 401 || statsRes.status === 401) {
+        sessionStorage.removeItem(PW_KEY);
+        setAuthed(false);
+        setAuthError(true);
+        setLoading(false);
+        return;
+      }
       const listData = await listRes.json();
       const statsData = await statsRes.json();
       setSubmissions(listData.submissions || []);
       setStats(statsData);
+      setAuthed(true);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
     } finally {
@@ -53,17 +70,33 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30s
+    if (typeof window !== "undefined" && sessionStorage.getItem(PW_KEY)) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+    const interval = setInterval(() => {
+      if (sessionStorage.getItem(PW_KEY)) fetchData();
+    }, 30000); // Refresh every 30s
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  const handleLogin = (e: FormEvent) => {
+    e.preventDefault();
+    if (!pwInput.trim()) return;
+    sessionStorage.setItem(PW_KEY, pwInput.trim());
+    setAuthError(false);
+    setLoading(true);
+    fetchData();
+  };
 
   const updateSubmission = async (id: string, field: string, value: unknown) => {
     setUpdating(id);
     try {
+      const pw = sessionStorage.getItem(PW_KEY) || "";
       await fetch("/api/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": pw },
         body: JSON.stringify({ action: "update", id, field, value }),
       });
       // Update local state
@@ -71,7 +104,9 @@ export default function AdminPage() {
         prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
       );
       // Refresh stats
-      const statsRes = await fetch("/api/admin?action=stats");
+      const statsRes = await fetch("/api/admin?action=stats", {
+        headers: { "x-admin-password": pw },
+      });
       const statsData = await statsRes.json();
       setStats(statsData);
     } catch (error) {
@@ -109,6 +144,43 @@ export default function AdminPage() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
+
+  if (!authed) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <motion.form
+          onSubmit={handleLogin}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-sm bg-surface border border-border rounded-tl-[20px] rounded-tr-[6px] rounded-br-[20px] rounded-bl-[6px] p-8 space-y-5"
+        >
+          <div className="text-center space-y-1">
+            <h1 className="font-display text-2xl tracking-tight">Before the Title</h1>
+            <p className="text-sm text-muted font-light">Admin access</p>
+          </div>
+          <input
+            type="password"
+            value={pwInput}
+            onChange={(e) => setPwInput(e.target.value)}
+            placeholder="Password"
+            autoFocus
+            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+          {authError && (
+            <p className="text-sm text-red-600 font-light text-center">
+              Incorrect password.
+            </p>
+          )}
+          <button
+            type="submit"
+            className="w-full px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-light transition-colors"
+          >
+            Enter
+          </button>
+        </motion.form>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">

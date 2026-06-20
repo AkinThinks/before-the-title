@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+// Gate the dashboard behind ADMIN_PASSWORD. If the env var is unset the gate is
+// open (useful for local/demo); set it in production to require the password.
+function isAuthorized(request: NextRequest): boolean {
+  const required = process.env.ADMIN_PASSWORD;
+  if (!required) return true;
+  return request.headers.get("x-admin-password") === required;
+}
+
+const unauthorized = () =>
+  NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
 export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) return unauthorized();
+
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action");
 
@@ -86,6 +99,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) return unauthorized();
+
   try {
     const body = await request.json();
     const { action, id, field, value } = body;

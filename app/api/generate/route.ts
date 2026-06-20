@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
 // Image generation can take 20-30s; allow headroom on serverless platforms.
 export const maxDuration = 60;
@@ -58,6 +58,9 @@ Fine art quality, gallery-worthy.`;
             n: 1,
             size: "1024x1024",
             quality: "medium",
+            // Less restrictive filtering so innocent personal reflections
+            // aren't false-positive blocked by the output moderator.
+            moderation: "low",
           }),
         }
       );
@@ -87,9 +90,11 @@ Fine art quality, gallery-worthy.`;
       artworkUrl = generatePlaceholderArtwork(reflection);
     }
 
-    // Store submission in Supabase if configured
-    if (isSupabaseConfigured() && supabase) {
-      const { error } = await supabase.from("submissions").insert({
+    // Store submission in Supabase if configured (server-side writes prefer the
+    // service-role client so they aren't subject to public RLS policies).
+    const db = supabaseAdmin || supabase;
+    if (isSupabaseConfigured() && db) {
+      const { error } = await db.from("submissions").insert({
         id: submissionId,
         source,
         reflection,
@@ -125,12 +130,15 @@ Fine art quality, gallery-worthy.`;
 async function persistImage(b64: string, submissionId: string): Promise<string> {
   const dataUri = `data:image/png;base64,${b64}`;
 
-  if (!isSupabaseConfigured() || !supabase) return dataUri;
+  // Upload with the service-role client (falls back to the public client if no
+  // secret key is set, which requires a permissive storage policy).
+  const storage = supabaseAdmin || supabase;
+  if (!storage) return dataUri;
 
   try {
     const bytes = Buffer.from(b64, "base64");
     const path = `${submissionId}.png`;
-    const { error } = await supabase.storage
+    const { error } = await storage.storage
       .from("artworks")
       .upload(path, bytes, { contentType: "image/png", upsert: true });
 
@@ -139,7 +147,7 @@ async function persistImage(b64: string, submissionId: string): Promise<string> 
       return dataUri;
     }
 
-    const { data } = supabase.storage.from("artworks").getPublicUrl(path);
+    const { data } = storage.storage.from("artworks").getPublicUrl(path);
     return data.publicUrl || dataUri;
   } catch (e) {
     console.error("Image persist error:", e);
