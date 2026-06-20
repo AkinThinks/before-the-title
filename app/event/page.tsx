@@ -172,8 +172,15 @@ export default function EventLanding() {
             collective gallery of the people who came before you.
           </motion.p>
 
-          <motion.div custom={4} variants={fadeUp} className="pt-2">
+          <motion.div
+            custom={4}
+            variants={fadeUp}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
+          >
             <Button href="/experience?src=online">Begin the Experience</Button>
+            <Button href="/gallery" variant="secondary">
+              View Gallery
+            </Button>
           </motion.div>
         </motion.section>
 

@@ -81,11 +81,11 @@ export default function ConfirmationScreen() {
               Download Again
             </Button>
             <Button
-              href="https://www.northtoshore.com"
+              href="/gallery"
               variant="secondary"
               className="w-full"
             >
-              Invite Someone Else
+              View the Gallery
             </Button>
             <div className="text-center pt-2">
               <button

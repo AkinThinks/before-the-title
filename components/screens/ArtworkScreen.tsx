@@ -8,12 +8,14 @@ import Button from "@/components/ui/Button";
 
 export default function ArtworkScreen() {
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setArtworkUrl(sessionStorage.getItem("artworkUrl"));
+      setSubmissionId(sessionStorage.getItem("submissionId"));
     }, 0);
 
     return () => window.clearTimeout(timeout);
@@ -114,6 +116,16 @@ export default function ArtworkScreen() {
             >
               Add to the Collective Story
             </Button>
+
+            {submissionId && (
+              <Button
+                href={`/gallery/${submissionId}`}
+                variant="ghost"
+                className="w-full"
+              >
+                Open Archive Page
+              </Button>
+            )}
 
             <div className="text-center pt-2">
               <button

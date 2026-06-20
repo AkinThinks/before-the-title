@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { createQrArtworkPng } from "@/lib/qr-artwork";
 
 // Image generation can take 20-30s; allow headroom on serverless platforms.
 export const maxDuration = 60;
+export const runtime = "nodejs";
 
 // OpenAI image model. gpt-image-1 returns the image as base64 bytes (b64_json),
 // which we can persist directly. Override with OPENAI_IMAGE_MODEL if desired
@@ -11,6 +13,18 @@ const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 
 function normalizeSource(value: unknown) {
   return value === "in-person" || value === "inperson" ? "in-person" : "online";
+}
+
+function getPublicBaseUrl(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return request.nextUrl.origin;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,15 +52,20 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.OPENAI_API_KEY;
     let artworkUrl: string;
+    let originalArtworkUrl: string | null = null;
+    const galleryUrl = `${getPublicBaseUrl(request)}/gallery/${submissionId}`;
 
     if (apiKey) {
       const prompt = `Create an abstract, emotional artwork inspired by this reflection: "${reflection}".
-Style: dreamy, textured, painterly with layered brushstrokes.
-Colors: deep blues, sage greens, warm whites, soft golds.
-Feel: nostalgic, beautiful, contemplative, intimate.
-Composition: flowing organic shapes suggesting memory and identity.
-No text, no words, no letters in the image.
-Fine art quality, gallery-worthy.`;
+The artwork belongs to "Before the Title," a North to Shore Festival experience about identity before public labels.
+Style: a civic dream portrait, layered painterly abstraction like memory becoming a public mural.
+Visual motifs: subtle shoreline-to-city rhythm, wave forms, transit-line movement, stage-light glow, brick-city warmth, and Newark creative energy without literal landmarks.
+Human presence: suggested through silhouette, aura, gesture, or negative space, not a realistic face.
+Collection palette: midnight blue, coastal teal, deep green, warm ivory, soft gold, and restrained brick red.
+Feel: intimate, luminous, communal, festival-ready, and emotionally grounded.
+Composition: one clear focal presence with flowing organic layers, leaving the lower-right corner visually calm for a small archive mark added later.
+No text, no words, no letters, no logos, no QR codes in the generated image.
+Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
 
       const response = await fetch(
         "https://api.openai.com/v1/images/generations",
@@ -82,7 +101,9 @@ Fine art quality, gallery-worthy.`;
       if (b64) {
         // We have the raw bytes. Persist to Supabase Storage when configured so
         // the image survives long-term; otherwise inline it as a data URI.
-        artworkUrl = await persistImage(b64, submissionId);
+        const persisted = await persistImage(b64, submissionId, galleryUrl);
+        artworkUrl = persisted.artworkUrl;
+        originalArtworkUrl = persisted.originalArtworkUrl;
       } else if (url) {
         // Some models return a (temporary) URL instead.
         artworkUrl = url;
@@ -103,6 +124,7 @@ Fine art quality, gallery-worthy.`;
         source,
         reflection,
         artwork_url: artworkUrl,
+        download_url: originalArtworkUrl,
         consent: true,
         moderation_status: "pending",
       });
@@ -131,31 +153,58 @@ Fine art quality, gallery-worthy.`;
  * (or if the upload fails) we fall back to an inline data URI so the flow still
  * works without any storage set up.
  */
-async function persistImage(b64: string, submissionId: string): Promise<string> {
+async function persistImage(
+  b64: string,
+  submissionId: string,
+  galleryUrl: string
+): Promise<{ artworkUrl: string; originalArtworkUrl: string | null }> {
   const dataUri = `data:image/png;base64,${b64}`;
 
   // Upload with the service-role client (falls back to the public client if no
   // secret key is set, which requires a permissive storage policy).
   const storage = supabaseAdmin || supabase;
-  if (!storage) return dataUri;
+  if (!storage) return { artworkUrl: dataUri, originalArtworkUrl: null };
 
   try {
     const bytes = Buffer.from(b64, "base64");
-    const path = `${submissionId}.png`;
-    const { error } = await storage.storage
-      .from("artworks")
-      .upload(path, bytes, { contentType: "image/png", upsert: true });
+    const originalPath = `${submissionId}-original.png`;
+    const finalPath = `${submissionId}.png`;
+    const finalBytes = await createQrArtworkPng({
+      imageBytes: bytes,
+      targetUrl: galleryUrl,
+    });
 
-    if (error) {
-      console.error("Supabase storage upload error:", error.message);
-      return dataUri;
+    const { error: originalError } = await storage.storage
+      .from("artworks")
+      .upload(originalPath, bytes, { contentType: "image/png", upsert: true });
+
+    if (originalError) {
+      console.error("Supabase original upload error:", originalError.message);
     }
 
-    const { data } = storage.storage.from("artworks").getPublicUrl(path);
-    return data.publicUrl || dataUri;
+    const { error: finalError } = await storage.storage
+      .from("artworks")
+      .upload(finalPath, finalBytes, { contentType: "image/png", upsert: true });
+
+    if (finalError) {
+      console.error("Supabase artwork upload error:", finalError.message);
+      return { artworkUrl: dataUri, originalArtworkUrl: null };
+    }
+
+    const { data: finalData } = storage.storage
+      .from("artworks")
+      .getPublicUrl(finalPath);
+    const { data: originalData } = storage.storage
+      .from("artworks")
+      .getPublicUrl(originalPath);
+
+    return {
+      artworkUrl: finalData.publicUrl || dataUri,
+      originalArtworkUrl: originalError ? null : originalData.publicUrl || null,
+    };
   } catch (e) {
     console.error("Image persist error:", e);
-    return dataUri;
+    return { artworkUrl: dataUri, originalArtworkUrl: null };
   }
 }
 

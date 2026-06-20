@@ -12,6 +12,7 @@ interface Submission {
   source: string;
   reflection: string;
   artwork_url: string | null;
+  download_url: string | null;
   name: string | null;
   social_handle: string | null;
   email: string | null;
@@ -137,7 +138,9 @@ export default function AdminPage() {
       "Date",
       "Source",
       "Reflection",
+      "Public Page",
       "Artwork URL",
+      "Original URL",
       "Name",
       "Social Handle",
       "Email",
@@ -151,7 +154,9 @@ export default function AdminPage() {
       new Date(s.created_at).toISOString(),
       s.source,
       s.reflection,
+      `${window.location.origin}/gallery/${s.id}`,
       s.artwork_url || "",
+      s.download_url || "",
       s.name || "",
       s.social_handle || "",
       s.email,
@@ -369,6 +374,14 @@ export default function AdminPage() {
                         No image yet
                       </div>
                     )}
+                    <a
+                      href={`/gallery/${submission.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 block text-center text-xs text-muted-light hover:text-muted transition-colors"
+                    >
+                      Open page
+                    </a>
                   </div>
 
                   <div className="flex flex-row lg:flex-col gap-2">
