@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
 function normalizeSource(value: unknown) {
   return value === "in-person" || value === "inperson" ? "in-person" : "online";
@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
     const {
       submissionId,
       name,
+      socialHandle,
+      social_handle,
       email,
       context,
       shortFilmOptIn,
@@ -24,11 +26,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    if (isSupabaseConfigured() && supabase) {
-      const { error } = await supabase
+    const db = supabaseAdmin || supabase;
+    if (isSupabaseConfigured() && db) {
+      const { error } = await db
         .from("submissions")
         .update({
           name: name || null,
+          social_handle: socialHandle || social_handle || null,
           email,
           context: context || null,
           short_film_opt_in: shortFilmOptIn || false,

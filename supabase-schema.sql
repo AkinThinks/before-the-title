@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   short_film_opt_in BOOLEAN DEFAULT false,
   website_social_opt_in BOOLEAN DEFAULT false,
   name TEXT,
+  social_handle TEXT,
   email TEXT,
   context TEXT,
   participant_type TEXT DEFAULT 'online' CHECK (participant_type IN ('in-person', 'online')),
@@ -21,6 +22,9 @@ CREATE TABLE IF NOT EXISTS submissions (
   curator_notes TEXT DEFAULT '',
   moderation_status TEXT DEFAULT 'pending' CHECK (moderation_status IN ('pending', 'approved', 'rejected'))
 );
+
+-- Existing deployments: add newer optional columns without rebuilding the table.
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS social_handle TEXT;
 
 -- Enable Row Level Security
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;

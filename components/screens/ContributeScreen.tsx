@@ -8,6 +8,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 
 export default function ContributeScreen() {
   const [name, setName] = useState("");
+  const [socialHandle, setSocialHandle] = useState("");
   const [email, setEmail] = useState("");
   const [context, setContext] = useState("");
   const [shortFilm, setShortFilm] = useState(false);
@@ -43,6 +44,7 @@ export default function ContributeScreen() {
           reflection,
           artworkUrl,
           name: name || null,
+          socialHandle: socialHandle || null,
           email,
           context: context || null,
           shortFilmOptIn: shortFilm,
@@ -112,7 +114,21 @@ export default function ContributeScreen() {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Email
+                Social profile
+                <span className="text-muted-light font-light ml-1">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={socialHandle}
+                onChange={(e) => setSocialHandle(e.target.value)}
+                placeholder="@yourhandle or profile link"
+                className="w-full bg-surface border border-border rounded-tl-[4px] rounded-tr-[16px] rounded-br-[4px] rounded-bl-[16px] px-5 py-3.5 text-base placeholder:text-muted-light/50 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Email for follow-up
               </label>
               <input
                 type="email"
@@ -120,7 +136,7 @@ export default function ContributeScreen() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full bg-surface border border-border rounded-tl-[4px] rounded-tr-[16px] rounded-br-[4px] rounded-bl-[16px] px-5 py-3.5 text-base placeholder:text-muted-light/50 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300"
+                className="w-full bg-surface border border-border rounded-tl-[16px] rounded-tr-[4px] rounded-br-[16px] rounded-bl-[4px] px-5 py-3.5 text-base placeholder:text-muted-light/50 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300"
               />
             </div>
 

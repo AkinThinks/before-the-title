@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
 // Gate the dashboard behind ADMIN_PASSWORD. If the env var is unset the gate is
 // open (useful for local/demo); set it in production to require the password.
@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get("action");
 
   if (action === "list") {
-    if (isSupabaseConfigured() && supabase) {
-      const { data, error } = await supabase
+    const db = supabaseAdmin || supabase;
+    if (isSupabaseConfigured() && db) {
+      const { data, error } = await db
         .from("submissions")
         .select("*")
         .order("created_at", { ascending: false });
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
           reflection: "I was the kid who drew on every surface — napkins, margins, walls. Before 'professional' I was just a creator.",
           artwork_url: null,
           name: "Maya",
+          social_handle: "@maya",
           email: "maya@example.com",
           context: "Visiting from Brooklyn",
           short_film_opt_in: true,
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
           reflection: "Dreamer. Still am.",
           artwork_url: null,
           name: null,
+          social_handle: "@dreamer",
           email: "alex@example.com",
           context: null,
           short_film_opt_in: true,
@@ -69,8 +72,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (action === "stats") {
-    if (isSupabaseConfigured() && supabase) {
-      const { data } = await supabase.from("submissions").select("*");
+    const db = supabaseAdmin || supabase;
+    if (isSupabaseConfigured() && db) {
+      const { data } = await db.from("submissions").select("*");
       const submissions = data || [];
 
       return NextResponse.json({
@@ -105,8 +109,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, id, field, value } = body;
 
-    if (action === "update" && isSupabaseConfigured() && supabase) {
-      const { error } = await supabase
+    const db = supabaseAdmin || supabase;
+    if (action === "update" && isSupabaseConfigured() && db) {
+      const { error } = await db
         .from("submissions")
         .update({ [field]: value })
         .eq("id", id);

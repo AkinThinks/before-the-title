@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const PW_KEY = "btt_admin_pw";
@@ -12,6 +13,7 @@ interface Submission {
   reflection: string;
   artwork_url: string | null;
   name: string | null;
+  social_handle: string | null;
   email: string;
   context: string | null;
   short_film_opt_in: boolean;
@@ -128,20 +130,40 @@ export default function AdminPage() {
   });
 
   const exportCSV = () => {
-    const headers = ["ID", "Date", "Source", "Reflection", "Name", "Email", "Context", "Short Film", "Web/Social", "Status"];
+    const csvCell = (value: unknown) =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const headers = [
+      "ID",
+      "Date",
+      "Source",
+      "Reflection",
+      "Artwork URL",
+      "Name",
+      "Social Handle",
+      "Email",
+      "Context",
+      "Short Film",
+      "Web/Social",
+      "Status",
+    ];
     const rows = submissions.map((s) => [
       s.id,
       new Date(s.created_at).toISOString(),
       s.source,
-      `"${s.reflection.replace(/"/g, '""')}"`,
+      s.reflection,
+      s.artwork_url || "",
       s.name || "",
+      s.social_handle || "",
       s.email,
       s.context || "",
       s.short_film_opt_in ? "Yes" : "No",
       s.website_social_opt_in ? "Yes" : "No",
       s.moderation_status,
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csv = [
+      headers.map(csvCell).join(","),
+      ...rows.map((r) => r.map(csvCell).join(",")),
+    ].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -303,6 +325,9 @@ export default function AdminPage() {
 
                     <div className="flex flex-wrap gap-4 text-sm text-muted-light">
                       {submission.name && <span>Name: {submission.name}</span>}
+                      {submission.social_handle && (
+                        <span>Social: {submission.social_handle}</span>
+                      )}
                       <span>Email: {submission.email}</span>
                       {submission.context && <span>Context: {submission.context}</span>}
                     </div>
@@ -315,6 +340,35 @@ export default function AdminPage() {
                         {submission.website_social_opt_in ? "Web/Social: Yes" : "Web/Social: No"}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="w-full lg:w-40 shrink-0">
+                    {submission.artwork_url ? (
+                      <a
+                        href={submission.artwork_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group"
+                      >
+                        <div className="relative w-full aspect-square overflow-hidden rounded-tl-[14px] rounded-tr-[4px] rounded-br-[14px] rounded-bl-[4px] bg-background border border-border">
+                          <Image
+                            src={submission.artwork_url}
+                            alt={`Artwork submitted by ${submission.name || submission.email}`}
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 160px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            unoptimized
+                          />
+                        </div>
+                        <span className="mt-2 block text-center text-xs text-muted-light group-hover:text-muted transition-colors">
+                          Open image
+                        </span>
+                      </a>
+                    ) : (
+                      <div className="w-full aspect-square rounded-tl-[14px] rounded-tr-[4px] rounded-br-[14px] rounded-bl-[4px] bg-background border border-border flex items-center justify-center text-xs text-muted-light text-center px-4">
+                        No image yet
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-row lg:flex-col gap-2">

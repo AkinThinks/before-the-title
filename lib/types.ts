@@ -9,6 +9,7 @@ export interface Submission {
   short_film_opt_in: boolean;
   website_social_opt_in: boolean;
   name: string | null;
+  social_handle: string | null;
   email: string | null;
   context: string | null;
   participant_type: "in-person" | "online";
