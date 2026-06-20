@@ -9,6 +9,10 @@ export const maxDuration = 60;
 // (e.g. "gpt-image-1.5", "gpt-image-2").
 const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 
+function normalizeSource(value: unknown) {
+  return value === "in-person" || value === "inperson" ? "in-person" : "online";
+}
+
 export async function POST(request: NextRequest) {
   // Read the body once up front so the catch block can still build a fallback.
   let reflection = "";
@@ -16,7 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     reflection = body.reflection || "";
-    source = body.source || "online";
+    source = normalizeSource(body.source);
   } catch {
     /* invalid JSON -> handled below */
   }

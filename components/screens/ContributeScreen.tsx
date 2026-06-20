@@ -17,8 +17,13 @@ export default function ContributeScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const source = sessionStorage.getItem("source");
-    if (source === "in-person") setParticipantType("in-person");
+    const timeout = window.setTimeout(() => {
+      if (sessionStorage.getItem("source") === "in-person") {
+        setParticipantType("in-person");
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

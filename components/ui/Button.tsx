@@ -3,6 +3,9 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+const MotionLink = motion.create(Link);
+const MotionButton = motion.create("button");
+
 interface ButtonProps {
   children: React.ReactNode;
   href?: string;
@@ -35,9 +38,6 @@ export default function Button({
   };
 
   const combined = `${baseStyles} ${variants[variant]} ${className}`;
-
-  const MotionLink = motion.create(Link);
-  const MotionButton = motion.create("button");
 
   if (href) {
     return (

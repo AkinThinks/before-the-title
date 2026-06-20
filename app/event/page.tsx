@@ -173,7 +173,7 @@ export default function EventLanding() {
           </motion.p>
 
           <motion.div custom={4} variants={fadeUp} className="pt-2">
-            <Button href="/reflect">Begin the Experience</Button>
+            <Button href="/experience?src=online">Begin the Experience</Button>
           </motion.div>
         </motion.section>
 

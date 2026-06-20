@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -11,8 +12,11 @@ export default function ArtworkScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const url = sessionStorage.getItem("artworkUrl");
-    if (url) setArtworkUrl(url);
+    const timeout = window.setTimeout(() => {
+      setArtworkUrl(sessionStorage.getItem("artworkUrl"));
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const handleDownload = async () => {
@@ -71,11 +75,14 @@ export default function ArtworkScreen() {
             className="relative"
           >
             {artworkUrl ? (
-                <div className="relative rounded-tl-[24px] rounded-tr-[6px] rounded-br-[24px] rounded-bl-[6px] overflow-hidden shadow-2xl shadow-primary/10">
-                <img
+              <div className="relative w-full aspect-[4/5] rounded-tl-[24px] rounded-tr-[6px] rounded-br-[24px] rounded-bl-[6px] overflow-hidden shadow-2xl shadow-primary/10">
+                <Image
                   src={artworkUrl}
                   alt="Your generated artwork"
-                  className="w-full aspect-[4/5] object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 448px"
+                  className="object-cover"
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
               </div>

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+function normalizeSource(value: unknown) {
+  return value === "in-person" || value === "inperson" ? "in-person" : "online";
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     const {
       submissionId,
-      reflection,
-      artworkUrl,
       name,
       email,
       context,
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
           short_film_opt_in: shortFilmOptIn || false,
           website_social_opt_in: websiteSocialOptIn || false,
           participant_type: participantType || "online",
-          source: source || participantType || "online",
+          source: normalizeSource(source || participantType),
         })
         .eq("id", submissionId);
 

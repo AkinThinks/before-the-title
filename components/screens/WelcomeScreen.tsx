@@ -23,8 +23,10 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     const src = searchParams.get("src");
-    if (src === "inperson" || src === "online") {
-      sessionStorage.setItem("source", src);
+    if (src === "inperson" || src === "in-person") {
+      sessionStorage.setItem("source", "in-person");
+    } else if (src === "online") {
+      sessionStorage.setItem("source", "online");
     }
   }, [searchParams]);
 
@@ -62,8 +64,15 @@ export default function WelcomeScreen() {
             Your voice becomes story.
           </motion.p>
 
-          <motion.div custom={3} variants={fadeUp} className="pt-4">
+          <motion.div
+            custom={3}
+            variants={fadeUp}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4"
+          >
             <Button href="/reflect">Begin</Button>
+            <Button href="/event" variant="ghost">
+              Event Details
+            </Button>
           </motion.div>
 
           <motion.p

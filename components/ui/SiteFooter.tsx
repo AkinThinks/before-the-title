@@ -7,7 +7,7 @@ export default function SiteFooter() {
 
   // The event landing page carries its own sponsor credits, so we hide the
   // global "Created by" footer there only.
-  if (pathname === "/event") return null;
+  if (pathname === "/" || pathname === "/event") return null;
 
   return (
     <footer className="py-4 text-center flex-shrink-0">

@@ -91,7 +91,7 @@ export default function ConfirmationScreen() {
               <button
                 onClick={() => {
                   sessionStorage.clear();
-                  window.location.href = "/";
+                  window.location.href = "/experience";
                 }}
                 className="text-sm text-muted-light hover:text-muted transition-colors font-light"
               >

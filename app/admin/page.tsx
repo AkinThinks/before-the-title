@@ -34,7 +34,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, rejected: 0, inPerson: 0, online: 0, shortFilm: 0 });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
 
   // Simple password gate (enforced by the API when ADMIN_PASSWORD is set).
@@ -70,15 +70,21 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
+    let timeout: number | undefined;
+
     if (typeof window !== "undefined" && sessionStorage.getItem(PW_KEY)) {
-      fetchData();
-    } else {
-      setLoading(false);
+      timeout = window.setTimeout(() => {
+        setLoading(true);
+        fetchData();
+      }, 0);
     }
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       if (sessionStorage.getItem(PW_KEY)) fetchData();
     }, 30000); // Refresh every 30s
-    return () => clearInterval(interval);
+    return () => {
+      if (timeout !== undefined) window.clearTimeout(timeout);
+      window.clearInterval(interval);
+    };
   }, [fetchData]);
 
   const handleLogin = (e: FormEvent) => {
