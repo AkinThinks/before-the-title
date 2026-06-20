@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENAI_API_KEY;
     let artworkUrl: string;
     let originalArtworkUrl: string | null = null;
-    let qrEmbedded = false;
     const galleryUrl = `${getPublicBaseUrl(request)}/gallery/${submissionId}`;
 
     if (apiKey) {
@@ -63,8 +62,8 @@ Visual motifs: subtle shoreline-to-city rhythm, wave forms, transit-line movemen
 Human presence: suggested through silhouette, aura, gesture, or negative space, not a realistic face.
 Collection palette: midnight blue, coastal teal, deep green, warm ivory, soft gold, and restrained brick red.
 Feel: intimate, luminous, communal, festival-ready, and emotionally grounded.
-Composition: one clear focal presence with flowing organic layers, leaving the lower-right corner visually calm for a small archive mark added later.
-No text, no words, no letters, no logos, no QR codes in the generated image.
+Composition: one clear focal presence with flowing organic layers.
+No text, no words, no letters, no logos.
 Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
 
       const response = await fetch(
@@ -101,10 +100,9 @@ Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
       if (b64) {
         // We have the raw bytes. Persist to Supabase Storage when configured so
         // the image survives long-term; otherwise inline it as a data URI.
-        const persisted = await persistImage(b64, submissionId, galleryUrl);
+        const persisted = await persistImage(b64, submissionId);
         artworkUrl = persisted.artworkUrl;
         originalArtworkUrl = persisted.originalArtworkUrl;
-        qrEmbedded = persisted.qrEmbedded;
       } else if (url) {
         // Some models return a (temporary) URL instead.
         artworkUrl = url;
@@ -139,7 +137,6 @@ Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
       artworkUrl,
       submissionId,
       galleryUrl,
-      qrEmbedded,
     });
   } catch (error) {
     console.error("Generation error:", error);
@@ -161,84 +158,42 @@ Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
  */
 async function persistImage(
   b64: string,
-  submissionId: string,
-  galleryUrl: string
+  submissionId: string
 ): Promise<{
   artworkUrl: string;
   originalArtworkUrl: string | null;
-  qrEmbedded: boolean;
 }> {
-  const fallbackArtworkUrl = generatePlaceholderArtwork(submissionId);
+  const dataUri = `data:image/png;base64,${b64}`;
 
   // Upload with the service-role client (falls back to the public client if no
   // secret key is set, which requires a permissive storage policy).
   const storage = supabaseAdmin || supabase;
   if (!storage) {
-    return {
-      artworkUrl: fallbackArtworkUrl,
-      originalArtworkUrl: null,
-      qrEmbedded: false,
-    };
+    return { artworkUrl: dataUri, originalArtworkUrl: null };
   }
 
   try {
     const bytes = Buffer.from(b64, "base64");
-    const originalPath = `${submissionId}-original.png`;
-    const finalPath = `${submissionId}.png`;
-    let finalBytes: Buffer<ArrayBufferLike> = bytes;
-    let qrEmbedded = false;
+    const path = `${submissionId}.png`;
 
-    try {
-      const { createQrArtworkPng } = await import("@/lib/qr-artwork");
-      finalBytes = await createQrArtworkPng({
-        imageBytes: bytes,
-        targetUrl: galleryUrl,
-      });
-      qrEmbedded = true;
-    } catch (qrError) {
-      console.error("QR artwork compose error:", qrError);
+    const { error } = await storage.storage
+      .from("artworks")
+      .upload(path, bytes, { contentType: "image/png", upsert: true });
+
+    if (error) {
+      console.error("Supabase artwork upload error:", error.message);
+      return { artworkUrl: dataUri, originalArtworkUrl: null };
     }
 
-    const { error: originalError } = await storage.storage
-      .from("artworks")
-      .upload(originalPath, bytes, { contentType: "image/png", upsert: true });
-
-    if (originalError) {
-      console.error("Supabase original upload error:", originalError.message);
-    }
-
-    const { error: finalError } = await storage.storage
-      .from("artworks")
-      .upload(finalPath, finalBytes, { contentType: "image/png", upsert: true });
-
-    if (finalError) {
-      console.error("Supabase artwork upload error:", finalError.message);
-      return {
-        artworkUrl: fallbackArtworkUrl,
-        originalArtworkUrl: null,
-        qrEmbedded: false,
-      };
-    }
-
-    const { data: finalData } = storage.storage
-      .from("artworks")
-      .getPublicUrl(finalPath);
-    const { data: originalData } = storage.storage
-      .from("artworks")
-      .getPublicUrl(originalPath);
+    const { data } = storage.storage.from("artworks").getPublicUrl(path);
 
     return {
-      artworkUrl: finalData.publicUrl || fallbackArtworkUrl,
-      originalArtworkUrl: originalError ? null : originalData.publicUrl || null,
-      qrEmbedded,
+      artworkUrl: data.publicUrl || dataUri,
+      originalArtworkUrl: null,
     };
   } catch (e) {
     console.error("Image persist error:", e);
-    return {
-      artworkUrl: fallbackArtworkUrl,
-      originalArtworkUrl: null,
-      qrEmbedded: false,
-    };
+    return { artworkUrl: dataUri, originalArtworkUrl: null };
   }
 }
 

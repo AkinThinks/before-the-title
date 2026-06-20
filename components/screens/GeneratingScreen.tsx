@@ -43,17 +43,12 @@ export default function GeneratingScreen() {
           if (data.galleryUrl) {
             sessionStorage.setItem("galleryUrl", data.galleryUrl);
           }
-          sessionStorage.setItem(
-            "qrEmbedded",
-            data.qrEmbedded ? "true" : "false"
-          );
         }
       } catch {
         // If generation fails, use a real bundled fallback image.
         sessionStorage.setItem("artworkUrl", "/art/abstract.jpg");
         sessionStorage.setItem("submissionId", "demo-" + Date.now());
         sessionStorage.removeItem("galleryUrl");
-        sessionStorage.setItem("qrEmbedded", "false");
       }
 
       clearInterval(interval);
