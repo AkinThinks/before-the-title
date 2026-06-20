@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
-import { createQrArtworkPng } from "@/lib/qr-artwork";
 
 // Image generation can take 20-30s; allow headroom on serverless platforms.
 export const maxDuration = 60;
@@ -169,10 +168,17 @@ async function persistImage(
     const bytes = Buffer.from(b64, "base64");
     const originalPath = `${submissionId}-original.png`;
     const finalPath = `${submissionId}.png`;
-    const finalBytes = await createQrArtworkPng({
-      imageBytes: bytes,
-      targetUrl: galleryUrl,
-    });
+    let finalBytes: Buffer<ArrayBufferLike> = bytes;
+
+    try {
+      const { createQrArtworkPng } = await import("@/lib/qr-artwork");
+      finalBytes = await createQrArtworkPng({
+        imageBytes: bytes,
+        targetUrl: galleryUrl,
+      });
+    } catch (qrError) {
+      console.error("QR artwork compose error:", qrError);
+    }
 
     const { error: originalError } = await storage.storage
       .from("artworks")
