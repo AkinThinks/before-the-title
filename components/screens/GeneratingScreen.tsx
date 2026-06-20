@@ -36,6 +36,13 @@ export default function GeneratingScreen() {
         if (data.artworkUrl) {
           sessionStorage.setItem("artworkUrl", data.artworkUrl);
           sessionStorage.setItem("submissionId", data.submissionId);
+          if (data.galleryUrl) {
+            sessionStorage.setItem("galleryUrl", data.galleryUrl);
+          }
+          sessionStorage.setItem(
+            "qrEmbedded",
+            data.qrEmbedded ? "true" : "false"
+          );
         }
       } catch {
         // If generation fails, use placeholder

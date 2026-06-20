@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENAI_API_KEY;
     let artworkUrl: string;
     let originalArtworkUrl: string | null = null;
+    let qrEmbedded = false;
     const galleryUrl = `${getPublicBaseUrl(request)}/gallery/${submissionId}`;
 
     if (apiKey) {
@@ -103,6 +104,7 @@ Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
         const persisted = await persistImage(b64, submissionId, galleryUrl);
         artworkUrl = persisted.artworkUrl;
         originalArtworkUrl = persisted.originalArtworkUrl;
+        qrEmbedded = persisted.qrEmbedded;
       } else if (url) {
         // Some models return a (temporary) URL instead.
         artworkUrl = url;
@@ -133,7 +135,12 @@ Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
       }
     }
 
-    return NextResponse.json({ artworkUrl, submissionId });
+    return NextResponse.json({
+      artworkUrl,
+      submissionId,
+      galleryUrl,
+      qrEmbedded,
+    });
   } catch (error) {
     console.error("Generation error:", error);
 
@@ -156,19 +163,26 @@ async function persistImage(
   b64: string,
   submissionId: string,
   galleryUrl: string
-): Promise<{ artworkUrl: string; originalArtworkUrl: string | null }> {
+): Promise<{
+  artworkUrl: string;
+  originalArtworkUrl: string | null;
+  qrEmbedded: boolean;
+}> {
   const dataUri = `data:image/png;base64,${b64}`;
 
   // Upload with the service-role client (falls back to the public client if no
   // secret key is set, which requires a permissive storage policy).
   const storage = supabaseAdmin || supabase;
-  if (!storage) return { artworkUrl: dataUri, originalArtworkUrl: null };
+  if (!storage) {
+    return { artworkUrl: dataUri, originalArtworkUrl: null, qrEmbedded: false };
+  }
 
   try {
     const bytes = Buffer.from(b64, "base64");
     const originalPath = `${submissionId}-original.png`;
     const finalPath = `${submissionId}.png`;
     let finalBytes: Buffer<ArrayBufferLike> = bytes;
+    let qrEmbedded = false;
 
     try {
       const { createQrArtworkPng } = await import("@/lib/qr-artwork");
@@ -176,6 +190,7 @@ async function persistImage(
         imageBytes: bytes,
         targetUrl: galleryUrl,
       });
+      qrEmbedded = true;
     } catch (qrError) {
       console.error("QR artwork compose error:", qrError);
     }
@@ -194,7 +209,7 @@ async function persistImage(
 
     if (finalError) {
       console.error("Supabase artwork upload error:", finalError.message);
-      return { artworkUrl: dataUri, originalArtworkUrl: null };
+      return { artworkUrl: dataUri, originalArtworkUrl: null, qrEmbedded: false };
     }
 
     const { data: finalData } = storage.storage
@@ -207,10 +222,11 @@ async function persistImage(
     return {
       artworkUrl: finalData.publicUrl || dataUri,
       originalArtworkUrl: originalError ? null : originalData.publicUrl || null,
+      qrEmbedded,
     };
   } catch (e) {
     console.error("Image persist error:", e);
-    return { artworkUrl: dataUri, originalArtworkUrl: null };
+    return { artworkUrl: dataUri, originalArtworkUrl: null, qrEmbedded: false };
   }
 }
 

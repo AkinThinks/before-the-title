@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 export default function ArtworkScreen() {
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const router = useRouter();
 
@@ -16,6 +17,7 @@ export default function ArtworkScreen() {
     const timeout = window.setTimeout(() => {
       setArtworkUrl(sessionStorage.getItem("artworkUrl"));
       setSubmissionId(sessionStorage.getItem("submissionId"));
+      setGalleryUrl(sessionStorage.getItem("galleryUrl"));
     }, 0);
 
     return () => window.clearTimeout(timeout);
@@ -119,7 +121,7 @@ export default function ArtworkScreen() {
 
             {submissionId && (
               <Button
-                href={`/gallery/${submissionId}`}
+                href={galleryUrl || `/gallery/${submissionId}`}
                 variant="ghost"
                 className="w-full"
               >
