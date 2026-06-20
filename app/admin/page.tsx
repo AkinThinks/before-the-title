@@ -14,7 +14,7 @@ interface Submission {
   artwork_url: string | null;
   name: string | null;
   social_handle: string | null;
-  email: string;
+  email: string | null;
   context: string | null;
   short_film_opt_in: boolean;
   website_social_opt_in: boolean;
@@ -328,7 +328,7 @@ export default function AdminPage() {
                       {submission.social_handle && (
                         <span>Social: {submission.social_handle}</span>
                       )}
-                      <span>Email: {submission.email}</span>
+                      {submission.email && <span>Email: {submission.email}</span>}
                       {submission.context && <span>Context: {submission.context}</span>}
                     </div>
 
@@ -353,7 +353,7 @@ export default function AdminPage() {
                         <div className="relative w-full aspect-square overflow-hidden rounded-tl-[14px] rounded-tr-[4px] rounded-br-[14px] rounded-bl-[4px] bg-background border border-border">
                           <Image
                             src={submission.artwork_url}
-                            alt={`Artwork submitted by ${submission.name || submission.email}`}
+                            alt={`Artwork submitted by ${submission.name || submission.email || "a participant"}`}
                             fill
                             sizes="(max-width: 1024px) 100vw, 160px"
                             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"

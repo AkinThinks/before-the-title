@@ -100,14 +100,14 @@ export default function ContributeScreen() {
           >
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Name or display name
-                <span className="text-muted-light font-light ml-1">(optional)</span>
+                Credit name
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="How you'd like to be known"
+                required
+                placeholder="How you'd like to be credited"
                 className="w-full bg-surface border border-border rounded-tl-[16px] rounded-tr-[4px] rounded-br-[16px] rounded-bl-[4px] px-5 py-3.5 text-base placeholder:text-muted-light/50 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300"
               />
             </div>
@@ -129,12 +129,12 @@ export default function ContributeScreen() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Email for follow-up
+                <span className="text-muted-light font-light ml-1">(optional)</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
                 placeholder="you@example.com"
                 className="w-full bg-surface border border-border rounded-tl-[16px] rounded-tr-[4px] rounded-br-[16px] rounded-bl-[4px] px-5 py-3.5 text-base placeholder:text-muted-light/50 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300"
               />
@@ -246,7 +246,7 @@ export default function ContributeScreen() {
           >
             <Button
               type="submit"
-              disabled={!email || submitting}
+              disabled={!name.trim() || submitting}
               className="w-full"
             >
               {submitting ? "Submitting..." : "Submit to the Collective Story"}

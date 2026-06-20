@@ -22,8 +22,11 @@ export async function POST(request: NextRequest) {
       source,
     } = body;
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!name || !String(name).trim()) {
+      return NextResponse.json(
+        { error: "Credit name is required" },
+        { status: 400 }
+      );
     }
 
     const db = supabaseAdmin || supabase;
@@ -31,9 +34,9 @@ export async function POST(request: NextRequest) {
       const { error } = await db
         .from("submissions")
         .update({
-          name: name || null,
+          name: String(name).trim(),
           social_handle: socialHandle || social_handle || null,
-          email,
+          email: email || null,
           context: context || null,
           short_film_opt_in: shortFilmOptIn || false,
           website_social_opt_in: websiteSocialOptIn || false,
