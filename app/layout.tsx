@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cause, Inter } from "next/font/google";
 import "./globals.css";
-import SiteFooter from "@/components/ui/SiteFooter";
 
 const cause = Cause({
   weight: ["400", "500", "600", "700", "800", "900"],
@@ -50,7 +49,6 @@ export default function RootLayout({
         <div className="fixed inset-0 bg-white/70 pointer-events-none" style={{ zIndex: 0 }} />
         <div className="relative flex flex-col h-screen overflow-hidden" style={{ zIndex: 1 }}>
           <div className="flex-1 overflow-y-auto">{children}</div>
-          <SiteFooter />
         </div>
       </body>
     </html>

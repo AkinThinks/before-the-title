@@ -11,7 +11,7 @@ export const supabase =
     : null;
 
 // Server-only client with the secret key. Bypasses row-level security, so it
-// must NEVER be imported into client components — only API routes. Used for
+// must NEVER be imported into client components, only API routes. Used for
 // storage uploads and DB writes so the public key can't be abused.
 export const supabaseAdmin =
   supabaseUrl && supabaseServiceKey

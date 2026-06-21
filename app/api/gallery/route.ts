@@ -14,15 +14,16 @@ type SubmissionRow = {
 };
 
 function toPublicPiece(row: SubmissionRow) {
+  const canShowCredit = Boolean(row.website_social_opt_in);
+
   return {
     id: row.id,
     created_at: row.created_at,
     source: row.source || "online",
     reflection: row.reflection,
     artwork_url: row.artwork_url,
-    name: row.name,
-    social_handle: row.social_handle || null,
-    website_social_opt_in: Boolean(row.website_social_opt_in),
+    name: canShowCredit ? row.name : null,
+    social_handle: canShowCredit ? row.social_handle || null : null,
     moderation_status: row.moderation_status || "pending",
   };
 }
@@ -34,8 +35,6 @@ export async function GET() {
     const { data, error } = await db
       .from("submissions")
       .select("*")
-      .eq("moderation_status", "approved")
-      .eq("website_social_opt_in", true)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -43,7 +42,11 @@ export async function GET() {
       return NextResponse.json({ pieces: [] }, { status: 500 });
     }
 
-    return NextResponse.json({ pieces: (data || []).map(toPublicPiece) });
+    const pieces = (data || [])
+      .filter((row) => (row.moderation_status || "pending") !== "rejected")
+      .map(toPublicPiece);
+
+    return NextResponse.json({ pieces });
   }
 
   return NextResponse.json({ pieces: [] });

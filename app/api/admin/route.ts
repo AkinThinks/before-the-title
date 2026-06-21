@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
           id: "demo-1",
           created_at: new Date().toISOString(),
           source: "in-person",
-          reflection: "I was the kid who drew on every surface — napkins, margins, walls. Before 'professional' I was just a creator.",
+          reflection: "I was the kid who drew on every surface: napkins, margins, walls. Before 'professional' I was just a creator.",
           artwork_url: null,
           name: "Maya",
           social_handle: "@maya",

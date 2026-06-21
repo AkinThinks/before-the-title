@@ -14,15 +14,16 @@ type SubmissionRow = {
 };
 
 function toPublicPiece(row: SubmissionRow) {
+  const canShowCredit = Boolean(row.website_social_opt_in);
+
   return {
     id: row.id,
     created_at: row.created_at,
     source: row.source || "online",
     reflection: row.reflection,
     artwork_url: row.artwork_url,
-    name: row.name,
-    social_handle: row.social_handle || null,
-    website_social_opt_in: Boolean(row.website_social_opt_in),
+    name: canShowCredit ? row.name : null,
+    social_handle: canShowCredit ? row.social_handle || null : null,
     moderation_status: row.moderation_status || "pending",
   };
 }
@@ -48,6 +49,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     }
 
     if (!data) {
+      return NextResponse.json({ piece: null }, { status: 404 });
+    }
+
+    if ((data.moderation_status || "pending") === "rejected") {
       return NextResponse.json({ piece: null }, { status: 404 });
     }
 

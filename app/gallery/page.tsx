@@ -43,7 +43,7 @@ export default function GalleryPage() {
               Collective Gallery
             </h1>
             <p className="text-muted font-light leading-relaxed max-w-xl">
-              A living archive of approved reflections and artworks from the
+              A living archive of community reflections and artworks from the
               people who stepped beyond their titles.
             </p>
           </div>

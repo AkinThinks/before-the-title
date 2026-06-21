@@ -26,9 +26,9 @@ type Sponsor = {
 
 /**
  * A sponsor logo. Two looks, chosen per logo:
- *  - "card": white card with the logo contained inside — for clean, transparent
+ *  - "card": white card with the logo contained inside, for clean, transparent
  *    wordmark logos (North to Shore, Newark Arts, SalesParrot).
- *  - "tile": a rounded, edge-to-edge "app-icon" badge — for photo/dark
+ *  - "tile": a rounded, edge-to-edge "app-icon" badge, for photo/dark
  *    community logos that look best filling the frame (NJ Code & Coffee,
  *    LaunchBox).
  * If a file is missing from /public/logos/ we fall back to the name.
@@ -73,7 +73,12 @@ function LogoCard({
   return (
     <div className="flex flex-col items-center gap-2.5">
       {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Visit ${name}`}
+        >
           {card}
         </a>
       ) : (
@@ -101,7 +106,7 @@ const steps = [
   {
     n: "01",
     title: "Reflect",
-    body: "Answer one quiet question — who were you before the title? A word, a memory, a feeling. There are no wrong answers.",
+    body: "Answer one quiet question: who were you before the title? A word, a memory, a feeling. There are no wrong answers.",
   },
   {
     n: "02",
@@ -111,7 +116,7 @@ const steps = [
   {
     n: "03",
     title: "Join the gallery",
-    body: "Your piece takes its place in a living, collective gallery of strangers — a portrait of who we all are beneath our titles.",
+    body: "Your piece takes its place in a living, collective gallery of strangers, a portrait of who we all are beneath our titles.",
   },
 ];
 
@@ -166,8 +171,8 @@ export default function EventLanding() {
             className="text-base text-muted leading-relaxed font-light max-w-lg mx-auto"
           >
             A free, interactive art experience about who we are beyond our
-            titles. Step away from the labels you carry — your job, your role,
-            your résumé — and answer one honest question. In a few quiet moments,
+            titles. Step away from the labels you carry, like your job, your role,
+            and your résumé, and answer one honest question. In a few quiet moments,
             your words become an original artwork that joins a growing,
             collective gallery of the people who came before you.
           </motion.p>
