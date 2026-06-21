@@ -31,12 +31,22 @@ interface Stats {
   inPerson: number;
   online: number;
   shortFilm: number;
+  archiveLive: number;
 }
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, rejected: 0, inPerson: 0, online: 0, shortFilm: 0 });
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    inPerson: 0,
+    online: 0,
+    shortFilm: 0,
+    archiveLive: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -244,7 +254,7 @@ export default function AdminPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8"
         >
           {[
             { label: "Total", value: stats.total, color: "text-foreground" },
@@ -254,6 +264,7 @@ export default function AdminPage() {
             { label: "In-Person", value: stats.inPerson, color: "text-primary" },
             { label: "Online", value: stats.online, color: "text-secondary" },
             { label: "Short Film", value: stats.shortFilm, color: "text-accent-teal" },
+            { label: "Archive Live", value: stats.archiveLive, color: "text-green-700" },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -344,6 +355,21 @@ export default function AdminPage() {
                       <span className={submission.website_social_opt_in ? "text-primary font-medium" : ""}>
                         {submission.website_social_opt_in ? "Web/Social: Yes" : "Web/Social: No"}
                       </span>
+                      <span
+                        className={
+                          submission.moderation_status === "approved" &&
+                          submission.website_social_opt_in
+                            ? "text-green-700 font-medium"
+                            : ""
+                        }
+                      >
+                        {submission.moderation_status === "approved" &&
+                        submission.website_social_opt_in
+                          ? "Archive: Live"
+                          : submission.moderation_status === "approved"
+                          ? "Archive: No permission"
+                          : "Archive: Not live"}
+                      </span>
                     </div>
                   </div>
 
@@ -374,14 +400,21 @@ export default function AdminPage() {
                         No image yet
                       </div>
                     )}
-                    <a
-                      href={`/gallery/${submission.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 block text-center text-xs text-muted-light hover:text-muted transition-colors"
-                    >
-                      Open page
-                    </a>
+                    {submission.moderation_status === "approved" &&
+                    submission.website_social_opt_in ? (
+                      <a
+                        href={`/gallery/${submission.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 block text-center text-xs text-muted-light hover:text-muted transition-colors"
+                      >
+                        Open public page
+                      </a>
+                    ) : (
+                      <span className="mt-2 block text-center text-xs text-muted-light">
+                        Public page hidden
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-row lg:flex-col gap-2">

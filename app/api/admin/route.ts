@@ -85,6 +85,9 @@ export async function GET(request: NextRequest) {
         inPerson: submissions.filter((s) => s.source === "in-person").length,
         online: submissions.filter((s) => s.source === "online").length,
         shortFilm: submissions.filter((s) => s.short_film_opt_in).length,
+        archiveLive: submissions.filter(
+          (s) => s.moderation_status === "approved" && s.website_social_opt_in
+        ).length,
       });
     }
 
@@ -96,6 +99,7 @@ export async function GET(request: NextRequest) {
       inPerson: 1,
       online: 1,
       shortFilm: 2,
+      archiveLive: 0,
     });
   }
 

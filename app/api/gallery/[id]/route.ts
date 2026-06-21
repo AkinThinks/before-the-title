@@ -53,7 +53,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ piece: null }, { status: 404 });
     }
 
-    if ((data.moderation_status || "pending") !== "approved") {
+    if (
+      (data.moderation_status || "pending") !== "approved" ||
+      !data.website_social_opt_in
+    ) {
       return NextResponse.json({ piece: null }, { status: 404 });
     }
 

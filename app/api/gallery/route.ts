@@ -44,7 +44,11 @@ export async function GET() {
     }
 
     const pieces = (data || [])
-      .filter((row) => (row.moderation_status || "pending") === "approved")
+      .filter(
+        (row) =>
+          (row.moderation_status || "pending") === "approved" &&
+          Boolean(row.website_social_opt_in)
+      )
       .map(toPublicPiece);
 
     return NextResponse.json({ pieces });

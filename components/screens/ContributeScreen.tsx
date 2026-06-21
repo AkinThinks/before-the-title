@@ -98,11 +98,12 @@ export default function ContributeScreen() {
             >
               Submit your piece
               <br />
-              to the archive
+              for curation
             </h2>
             <p className="text-muted font-light text-sm leading-relaxed">
-              Your piece will be received for review. Approved selections may
-              appear in the public archive or future project chapters.
+              Public archive placement requires your permission below and
+              curator approval. Approved selections may appear in the archive
+              or future project chapters.
             </p>
           </motion.div>
 
@@ -215,9 +216,12 @@ export default function ContributeScreen() {
                 </div>
               </div>
               <span className="text-sm text-muted leading-snug">
-                My artwork may be considered for public archive, website, or social features
+                Consider my artwork for the public archive, website, or social features
               </span>
             </label>
+            <p className="pl-8 text-xs text-muted-light font-light leading-relaxed">
+              If this stays unchecked, your piece will not appear in the public archive.
+            </p>
           </motion.div>
 
           <motion.div
@@ -269,7 +273,7 @@ export default function ContributeScreen() {
               disabled={submitting}
               className="w-full"
             >
-              {submitting ? "Submitting..." : "Submit to the Living Archive"}
+              {submitting ? "Submitting..." : "Submit for Curation Review"}
             </Button>
           </motion.div>
         </form>
