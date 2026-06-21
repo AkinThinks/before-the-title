@@ -143,16 +143,8 @@ export default function EventLanding() {
           animate="visible"
           className="text-center space-y-7"
         >
-          <motion.p
-            custom={0}
-            variants={fadeUp}
-            className="text-xs sm:text-sm tracking-[0.3em] uppercase text-muted-light font-light"
-          >
-            North&nbsp;to&nbsp;Shore Festival · Newark Arts
-          </motion.p>
-
           <motion.h1
-            custom={1}
+            custom={0}
             variants={fadeUp}
             className="font-display text-5xl sm:text-6xl md:text-7xl leading-[1.03] tracking-tight"
           >
@@ -162,7 +154,7 @@ export default function EventLanding() {
           </motion.h1>
 
           <motion.p
-            custom={2}
+            custom={1}
             variants={fadeUp}
             className="text-lg sm:text-xl text-muted leading-relaxed font-light max-w-md mx-auto"
           >
@@ -172,7 +164,7 @@ export default function EventLanding() {
           </motion.p>
 
           <motion.p
-            custom={3}
+            custom={2}
             variants={fadeUp}
             className="text-base text-muted leading-relaxed font-light max-w-lg mx-auto"
           >
@@ -184,7 +176,7 @@ export default function EventLanding() {
           </motion.p>
 
           <motion.div
-            custom={4}
+            custom={3}
             variants={fadeUp}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
           >
