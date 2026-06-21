@@ -49,6 +49,8 @@ export default function AdminPage() {
   });
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [updateError, setUpdateError] = useState("");
 
   // Simple password gate (enforced by the API when ADMIN_PASSWORD is set).
   const [authed, setAuthed] = useState(false);
@@ -72,11 +74,23 @@ export default function AdminPage() {
       }
       const listData = await listRes.json();
       const statsData = await statsRes.json();
+      if (!listRes.ok || !statsRes.ok) {
+        throw new Error(
+          listData.error || statsData.error || "Could not load admin data."
+        );
+      }
       setSubmissions(listData.submissions || []);
       setStats(statsData);
+      setLoadError("");
       setAuthed(true);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
+      if (pw) setAuthed(true);
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "Could not load admin data."
+      );
     } finally {
       setLoading(false);
     }
@@ -111,25 +125,44 @@ export default function AdminPage() {
 
   const updateSubmission = async (id: string, field: string, value: unknown) => {
     setUpdating(id);
+    setUpdateError("");
     try {
       const pw = sessionStorage.getItem(PW_KEY) || "";
-      await fetch("/api/admin", {
+      const response = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-password": pw },
         body: JSON.stringify({ action: "update", id, field, value }),
       });
-      // Update local state
+
+      if (response.status === 401) {
+        sessionStorage.removeItem(PW_KEY);
+        setAuthed(false);
+        setAuthError(true);
+        throw new Error("Admin password was rejected.");
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Update failed.");
+      }
+
       setSubmissions((prev) =>
         prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
       );
-      // Refresh stats
+      // Refresh stats after the database confirms the row update.
       const statsRes = await fetch("/api/admin?action=stats", {
         headers: { "x-admin-password": pw },
       });
-      const statsData = await statsRes.json();
+      const statsData = await statsRes.json().catch(() => ({}));
+      if (!statsRes.ok) {
+        throw new Error(statsData.error || "Stats refresh failed.");
+      }
       setStats(statsData);
     } catch (error) {
       console.error("Update failed:", error);
+      setUpdateError(
+        error instanceof Error ? error.message : "Update failed."
+      );
     } finally {
       setUpdating(null);
     }
@@ -297,6 +330,13 @@ export default function AdminPage() {
           <div className="text-center py-16 text-muted-light">
             <p className="font-light">Loading submissions...</p>
           </div>
+        ) : loadError ? (
+          <div className="text-center py-16 space-y-3">
+            <p className="text-red-600 font-light">{loadError}</p>
+            <p className="text-sm text-muted-light font-light">
+              Check the production environment variables, then redeploy.
+            </p>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-muted-light">
             <p className="font-light">No submissions in this category yet.</p>
@@ -445,6 +485,12 @@ export default function AdminPage() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        )}
+
+        {updateError && (
+          <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-red-200 bg-white px-4 py-3 text-center text-sm text-red-700 shadow-lg">
+            {updateError}
           </div>
         )}
       </div>

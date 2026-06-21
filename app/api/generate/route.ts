@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 // Image generation can take 20-30s; allow headroom on serverless platforms.
 export const maxDuration = 60;
@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENAI_API_KEY;
     let artworkUrl: string;
     let originalArtworkUrl: string | null = null;
+    let imagePersisted = false;
+    let archiveError: string | null = null;
     const galleryUrl = `${getPublicBaseUrl(request)}/gallery/${submissionId}`;
 
     if (apiKey) {
@@ -103,9 +105,12 @@ Make it feel like one artwork in a larger living archive of people remembering w
         const persisted = await persistImage(b64, submissionId);
         artworkUrl = persisted.artworkUrl;
         originalArtworkUrl = persisted.originalArtworkUrl;
+        imagePersisted = persisted.persisted;
+        archiveError = persisted.error;
       } else if (url) {
         // Some models return a (temporary) URL instead.
         artworkUrl = url;
+        imagePersisted = false;
       } else {
         throw new Error("No image returned");
       }
@@ -114,10 +119,11 @@ Make it feel like one artwork in a larger living archive of people remembering w
       artworkUrl = generatePlaceholderArtwork(reflection);
     }
 
-    // Store submission in Supabase if configured (server-side writes prefer the
-    // service-role client so they aren't subject to public RLS policies).
-    const db = supabaseAdmin || supabase;
-    if (isSupabaseConfigured() && db) {
+    // Store submission in Supabase with the service-role client so writes are
+    // not blocked by public RLS policies.
+    let stored = false;
+    const db = supabaseAdmin;
+    if (db) {
       const { error } = await db.from("submissions").insert({
         id: submissionId,
         source,
@@ -129,15 +135,26 @@ Make it feel like one artwork in a larger living archive of people remembering w
       });
 
       if (error) {
+        archiveError = error.message;
         console.error("Supabase insert error:", error);
+      } else {
+        stored = true;
       }
+    } else {
+      archiveError =
+        "Archive storage is not configured.";
+      console.error(
+        "Supabase service role is not configured. Add SUPABASE_SERVICE_ROLE_KEY in production."
+      );
     }
 
     return NextResponse.json({
       artworkUrl,
-      submissionId,
-      galleryUrl,
-      stored: true,
+      submissionId: stored ? submissionId : null,
+      galleryUrl: stored ? galleryUrl : null,
+      stored,
+      imagePersisted,
+      archiveError,
     });
   } catch (error) {
     console.error("Generation error:", error);
@@ -146,9 +163,9 @@ Make it feel like one artwork in a larger living archive of people remembering w
     // persist it when possible so downstream contribution still has a real row.
     const artworkUrl = generatePlaceholderArtwork(reflection);
     let stored = false;
-    const db = supabaseAdmin || supabase;
+    const db = supabaseAdmin;
 
-    if (reflection && isSupabaseConfigured() && db) {
+    if (reflection && db) {
       const { error: insertError } = await db.from("submissions").insert({
         id: submissionId,
         source,
@@ -172,7 +189,11 @@ Make it feel like one artwork in a larger living archive of people remembering w
       galleryUrl: stored ? `${getPublicBaseUrl(request)}/gallery/${submissionId}` : null,
       fallback: true,
       stored,
-    }, { status: stored ? 200 : 503 });
+      imagePersisted: false,
+      archiveError: stored
+        ? null
+        : "Artwork generation fell back and was not saved to Supabase.",
+    });
   }
 }
 
@@ -188,14 +209,22 @@ async function persistImage(
 ): Promise<{
   artworkUrl: string;
   originalArtworkUrl: string | null;
+  persisted: boolean;
+  error: string | null;
 }> {
   const dataUri = `data:image/png;base64,${b64}`;
 
-  // Upload with the service-role client (falls back to the public client if no
-  // secret key is set, which requires a permissive storage policy).
-  const storage = supabaseAdmin || supabase;
+  // Upload with the service-role client. Public clients should not write to
+  // storage in production.
+  const storage = supabaseAdmin;
   if (!storage) {
-    return { artworkUrl: dataUri, originalArtworkUrl: null };
+    return {
+      artworkUrl: dataUri,
+      originalArtworkUrl: null,
+      persisted: false,
+      error:
+        "Archive image storage is not configured.",
+    };
   }
 
   try {
@@ -208,7 +237,12 @@ async function persistImage(
 
     if (error) {
       console.error("Supabase artwork upload error:", error.message);
-      return { artworkUrl: dataUri, originalArtworkUrl: null };
+      return {
+        artworkUrl: dataUri,
+        originalArtworkUrl: null,
+        persisted: false,
+        error: "Archive image storage failed.",
+      };
     }
 
     const { data } = storage.storage.from("artworks").getPublicUrl(path);
@@ -216,10 +250,17 @@ async function persistImage(
     return {
       artworkUrl: data.publicUrl || dataUri,
       originalArtworkUrl: null,
+      persisted: Boolean(data.publicUrl),
+      error: data.publicUrl ? null : "Archive image storage failed.",
     };
   } catch (e) {
     console.error("Image persist error:", e);
-    return { artworkUrl: dataUri, originalArtworkUrl: null };
+    return {
+      artworkUrl: dataUri,
+      originalArtworkUrl: null,
+      persisted: false,
+      error: "Image upload failed.",
+    };
   }
 }
 

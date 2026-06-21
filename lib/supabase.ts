@@ -23,3 +23,15 @@ export const supabaseAdmin =
 export function isSupabaseConfigured(): boolean {
   return !!supabaseUrl && !!supabaseAnonKey;
 }
+
+export function isSupabaseAdminConfigured(): boolean {
+  return !!supabaseUrl && !!supabaseServiceKey;
+}
+
+export function getSupabaseServerConfigStatus() {
+  return {
+    hasSupabaseUrl: Boolean(supabaseUrl),
+    hasSupabaseAnonKey: Boolean(supabaseAnonKey),
+    hasSupabaseServiceRoleKey: Boolean(supabaseServiceKey),
+  };
+}

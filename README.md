@@ -27,8 +27,9 @@ Required for production:
 - `ADMIN_PASSWORD`
 - `NEXT_PUBLIC_SITE_URL`
 
-`SUPABASE_SERVICE_ROLE_KEY` is used only in API routes. Do not expose it to
-client components.
+`SUPABASE_SERVICE_ROLE_KEY` is required for archive writes, image uploads,
+admin review actions, and curation updates. It is used only in API routes. Do
+not expose it to client components.
 
 ## Supabase
 

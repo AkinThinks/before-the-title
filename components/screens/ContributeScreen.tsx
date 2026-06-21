@@ -68,8 +68,12 @@ export default function ContributeScreen() {
       }
 
       router.push("/confirmation");
-    } catch {
-      setSubmitError("We could not save that update. Please try again.");
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "We could not save that update. Please try again."
+      );
       setSubmitting(false);
     }
   };

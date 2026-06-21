@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  supabaseAdmin,
+  getSupabaseServerConfigStatus,
+} from "@/lib/supabase";
 
 // Gate the dashboard behind ADMIN_PASSWORD. Local development may run without
 // it, but production fails closed if the env var is missing.
@@ -18,9 +21,18 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action");
 
+  if (action === "health") {
+    return NextResponse.json({
+      ...getSupabaseServerConfigStatus(),
+      hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY),
+      hasAdminPassword: Boolean(process.env.ADMIN_PASSWORD),
+      runtime: process.env.NODE_ENV || "development",
+    });
+  }
+
   if (action === "list") {
-    const db = supabaseAdmin || supabase;
-    if (isSupabaseConfigured() && db) {
+    const db = supabaseAdmin;
+    if (db) {
       const { data, error } = await db
         .from("submissions")
         .select("*")
@@ -32,6 +44,17 @@ export async function GET(request: NextRequest) {
       }
 
       return NextResponse.json({ submissions: data || [] });
+    }
+
+    if (getSupabaseServerConfigStatus().hasSupabaseUrl) {
+      return NextResponse.json(
+        {
+          submissions: [],
+          error:
+            "Supabase service role is not configured. Add SUPABASE_SERVICE_ROLE_KEY in production.",
+        },
+        { status: 500 }
+      );
     }
 
     // Demo data when Supabase is not configured
@@ -72,8 +95,8 @@ export async function GET(request: NextRequest) {
   }
 
   if (action === "stats") {
-    const db = supabaseAdmin || supabase;
-    if (isSupabaseConfigured() && db) {
+    const db = supabaseAdmin;
+    if (db) {
       const { data } = await db.from("submissions").select("*");
       const submissions = data || [];
 
@@ -89,6 +112,16 @@ export async function GET(request: NextRequest) {
           (s) => s.moderation_status === "approved" && s.website_social_opt_in
         ).length,
       });
+    }
+
+    if (getSupabaseServerConfigStatus().hasSupabaseUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Supabase service role is not configured. Add SUPABASE_SERVICE_ROLE_KEY in production.",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -113,19 +146,54 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, id, field, value } = body;
 
-    const db = supabaseAdmin || supabase;
-    if (action === "update" && isSupabaseConfigured() && db) {
-      const { error } = await db
+    const db = supabaseAdmin;
+    if (action === "update" && db) {
+      const editableFields = new Set([
+        "moderation_status",
+        "curator_notes",
+        "selected_for_short_film",
+        "selected_for_website",
+        "selected_for_social",
+      ]);
+
+      if (!editableFields.has(field)) {
+        return NextResponse.json({ error: "Field is not editable" }, { status: 400 });
+      }
+
+      if (
+        field === "moderation_status" &&
+        !["pending", "approved", "rejected"].includes(String(value))
+      ) {
+        return NextResponse.json({ error: "Invalid moderation status" }, { status: 400 });
+      }
+
+      const { data, error } = await db
         .from("submissions")
         .update({ [field]: value })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         console.error("Supabase update error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      if (!data) {
+        return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+      }
+
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "update" && getSupabaseServerConfigStatus().hasSupabaseUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Supabase service role is not configured. Add SUPABASE_SERVICE_ROLE_KEY in production.",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ error: "Unknown action or Supabase not configured" }, { status: 400 });

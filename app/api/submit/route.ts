@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  supabaseAdmin,
+  getSupabaseServerConfigStatus,
+} from "@/lib/supabase";
 
 function normalizeSource(value: unknown) {
   return value === "in-person" || value === "inperson" ? "in-person" : "online";
@@ -38,8 +41,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = supabaseAdmin || supabase;
-    if (isSupabaseConfigured() && db) {
+    const db = supabaseAdmin;
+    if (db) {
       const update = {
         name: name && String(name).trim() ? String(name).trim() : null,
         social_handle: socialHandle || social_handle || null,
@@ -105,6 +108,18 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
+
+      return NextResponse.json({ success: true, submissionId });
+    }
+
+    if (getSupabaseServerConfigStatus().hasSupabaseUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Archive storage is not configured. Please try again later.",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, submissionId });
