@@ -40,7 +40,7 @@ export default function GalleryPage() {
               Before the Title
             </p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-tight tracking-tight">
-              Collective Gallery
+              Living Archive
             </h1>
             <p className="text-muted font-light leading-relaxed max-w-xl">
               A living archive of community reflections and artworks from the
@@ -65,7 +65,7 @@ export default function GalleryPage() {
         ) : pieces.length === 0 ? (
           <div className="py-20 text-center space-y-5">
             <p className="text-muted-light font-light">
-              The public gallery is opening soon.
+              The public archive is opening soon.
             </p>
             <Button href="/experience">Create a Piece</Button>
           </div>

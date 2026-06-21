@@ -16,13 +16,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Before the Title | An Interactive Art Experience",
+  title: "Before the Title | A Living Archive",
   description:
-    "Your reflection becomes art. Your voice becomes story. A free interactive art experience about who we are beyond our titles.",
+    "Your reflection becomes art. Your voice becomes story. An ongoing participatory art project about who we are beyond our titles.",
   openGraph: {
-    title: "Before the Title | An Interactive Art Experience",
+    title: "Before the Title | A Living Archive",
     description:
-      "Your reflection becomes art. Your voice becomes story.",
+      "An ongoing participatory art project about who we are beyond our titles.",
     type: "website",
   },
 };

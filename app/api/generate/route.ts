@@ -56,15 +56,15 @@ export async function POST(request: NextRequest) {
 
     if (apiKey) {
       const prompt = `Create an abstract, emotional artwork inspired by this reflection: "${reflection}".
-The artwork belongs to "Before the Title," a North to Shore Festival experience about identity before public labels.
-Style: a civic dream portrait, layered painterly abstraction like memory becoming a public mural.
-Visual motifs: subtle shoreline-to-city rhythm, wave forms, transit-line movement, stage-light glow, brick-city warmth, and Newark creative energy without literal landmarks.
+The artwork belongs to "Before the Title," an ongoing participatory art project about identity before public labels.
+Style: a layered painterly abstraction, like memory becoming a public artwork.
+Visual motifs: childhood memory, soft thresholds, handwritten feeling, unfolding paths, quiet light, and traces of community without literal landmarks.
 Human presence: suggested through silhouette, aura, gesture, or negative space, not a realistic face.
-Collection palette: midnight blue, coastal teal, deep green, warm ivory, soft gold, and restrained brick red.
-Feel: intimate, luminous, communal, festival-ready, and emotionally grounded.
+Collection palette: midnight blue, coastal teal, deep green, warm ivory, soft gold, and restrained clay red.
+Feel: intimate, luminous, communal, timeless, and emotionally grounded.
 Composition: one clear focal presence with flowing organic layers.
 No text, no words, no letters, no logos.
-Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
+Make it feel like one artwork in a larger living archive of people remembering who they were before the world named them.`;
 
       const response = await fetch(
         "https://api.openai.com/v1/images/generations",
@@ -137,16 +137,42 @@ Make it feel like one artwork in a larger living gallery of New Jersey voices.`;
       artworkUrl,
       submissionId,
       galleryUrl,
+      stored: true,
     });
   } catch (error) {
     console.error("Generation error:", error);
 
-    // Fallback: return a placeholder so the user still sees something
+    // Fallback: return a placeholder so the user still sees something, and
+    // persist it when possible so downstream contribution still has a real row.
+    const artworkUrl = generatePlaceholderArtwork(reflection);
+    let stored = false;
+    const db = supabaseAdmin || supabase;
+
+    if (reflection && isSupabaseConfigured() && db) {
+      const { error: insertError } = await db.from("submissions").insert({
+        id: submissionId,
+        source,
+        reflection,
+        artwork_url: artworkUrl,
+        download_url: null,
+        consent: true,
+        moderation_status: "pending",
+      });
+
+      if (insertError) {
+        console.error("Fallback Supabase insert error:", insertError);
+      } else {
+        stored = true;
+      }
+    }
+
     return NextResponse.json({
-      artworkUrl: generatePlaceholderArtwork(reflection),
-      submissionId: "fallback-" + Date.now(),
+      artworkUrl,
+      submissionId: stored ? submissionId : null,
+      galleryUrl: stored ? `${getPublicBaseUrl(request)}/gallery/${submissionId}` : null,
       fallback: true,
-    });
+      stored,
+    }, { status: stored ? 200 : 503 });
   }
 }
 

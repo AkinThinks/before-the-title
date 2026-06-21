@@ -113,7 +113,7 @@ export default function GalleryDetailPage() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button href="/gallery" variant="secondary">
-              View Gallery
+              View Archive
             </Button>
             <Button href="/film" variant="ghost">
               Short Film

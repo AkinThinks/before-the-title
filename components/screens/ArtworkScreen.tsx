@@ -9,7 +9,6 @@ import Button from "@/components/ui/Button";
 export default function ArtworkScreen() {
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
-  const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const router = useRouter();
@@ -18,7 +17,6 @@ export default function ArtworkScreen() {
     const timeout = window.setTimeout(() => {
       setArtworkUrl(sessionStorage.getItem("artworkUrl"));
       setSubmissionId(sessionStorage.getItem("submissionId"));
-      setGalleryUrl(sessionStorage.getItem("galleryUrl"));
     }, 0);
 
     return () => window.clearTimeout(timeout);
@@ -83,7 +81,7 @@ export default function ArtworkScreen() {
               <div className="relative w-full aspect-[4/5] rounded-tl-[24px] rounded-tr-[6px] rounded-br-[24px] rounded-bl-[6px] overflow-hidden shadow-2xl shadow-primary/10">
                 <Image
                   src={artworkUrl}
-                  alt="Your generated artwork"
+                  alt="Your artwork"
                   fill
                   sizes="(max-width: 640px) 100vw, 448px"
                   className="object-cover"
@@ -118,22 +116,28 @@ export default function ArtworkScreen() {
               {downloading ? "Downloading..." : "Download Artwork"}
             </Button>
 
-            <Button
-              onClick={() => router.push("/contribute")}
-              variant="secondary"
-              className="w-full"
-            >
-              Add to the Collective Story
-            </Button>
-
-            {submissionId && (
+            {submissionId ? (
               <Button
-                href={galleryUrl || `/gallery/${submissionId}`}
-                variant="ghost"
+                onClick={() => router.push("/contribute")}
+                variant="secondary"
                 className="w-full"
               >
-                Open Archive Page
+                Add to the Collective Story
               </Button>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-center text-sm text-muted-light font-light leading-relaxed">
+                  This piece was not saved to the archive. You can download it
+                  or try again.
+                </p>
+                <Button
+                  onClick={() => router.push("/reflect")}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  Try Again
+                </Button>
+              </div>
             )}
 
             <div className="text-center pt-2">

@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Before the Title
 
-## Getting Started
+An ongoing participatory art project about who people were before roles,
+resumes, titles, and public identity. Participants answer one reflective prompt,
+receive a personal artwork, and can submit it for curation into the public
+archive and future project materials.
 
-First, run the development server:
+## Local Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and fill in the values.
 
-## Learn More
+Required for production:
 
-To learn more about Next.js, take a look at the following resources:
+- `OPENAI_API_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_PASSWORD`
+- `NEXT_PUBLIC_SITE_URL`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`SUPABASE_SERVICE_ROLE_KEY` is used only in API routes. Do not expose it to
+client components.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Supabase
 
-## Deploy on Vercel
+Run `supabase-schema.sql` in the Supabase SQL editor. The schema enables RLS and
+does not create public read or update policies. Production writes, reads, image
+uploads, and curation actions should go through the Next.js API routes using the
+service role key.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Create a public storage bucket named `artworks` for persisted generated images.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Curation
+
+Submissions are created with `moderation_status = pending`. The public archive
+only shows approved pieces. Use `/admin` to review, approve, reject, add notes,
+and export submissions.
+
+Set `ADMIN_PASSWORD` in production. Without it, the admin API fails closed in
+production.
+
+## Verification
+
+```bash
+npm run lint
+npm run build
+```

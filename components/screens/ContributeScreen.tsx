@@ -15,6 +15,7 @@ export default function ContributeScreen() {
   const [websiteSocial, setWebsiteSocial] = useState(false);
   const [participantType, setParticipantType] = useState<"in-person" | "online">("online");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -35,8 +36,15 @@ export default function ContributeScreen() {
     const artworkUrl = sessionStorage.getItem("artworkUrl") || "";
     const submissionId = sessionStorage.getItem("submissionId") || "";
 
+    if (!submissionId) {
+      setSubmitError("This piece was not saved to the archive. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await fetch("/api/submit", {
+      setSubmitError("");
+      const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -53,11 +61,17 @@ export default function ContributeScreen() {
           source: sessionStorage.getItem("source") || "online",
         }),
       });
-    } catch {
-      // Proceed anyway - submission was already stored during generation
-    }
 
-    router.push("/confirmation");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Could not save your contribution.");
+      }
+
+      router.push("/confirmation");
+    } catch {
+      setSubmitError("We could not save that update. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -101,13 +115,13 @@ export default function ContributeScreen() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Credit name
+                <span className="text-muted-light font-light ml-1">(optional)</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="How you'd like to be credited"
+                placeholder="How you'd like to be credited, or leave blank"
                 className="w-full bg-surface border border-border rounded-tl-[16px] rounded-tr-[4px] rounded-br-[16px] rounded-bl-[4px] px-5 py-3.5 text-base placeholder:text-muted-light/50 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300"
               />
             </div>
@@ -243,10 +257,16 @@ export default function ContributeScreen() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-3"
           >
+            {submitError && (
+              <p className="text-center text-sm text-red-600 font-light">
+                {submitError}
+              </p>
+            )}
             <Button
               type="submit"
-              disabled={!name.trim() || submitting}
+              disabled={submitting}
               className="w-full"
             >
               {submitting ? "Submitting..." : "Submit to the Collective Story"}

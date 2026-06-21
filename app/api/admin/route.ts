@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
-// Gate the dashboard behind ADMIN_PASSWORD. If the env var is unset the gate is
-// open (useful for local/demo); set it in production to require the password.
+// Gate the dashboard behind ADMIN_PASSWORD. Local development may run without
+// it, but production fails closed if the env var is missing.
 function isAuthorized(request: NextRequest): boolean {
   const required = process.env.ADMIN_PASSWORD;
-  if (!required) return true;
+  if (!required) return process.env.NODE_ENV !== "production";
   return request.headers.get("x-admin-password") === required;
 }
 

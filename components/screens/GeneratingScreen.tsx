@@ -8,7 +8,7 @@ const messages = [
   "Translating your reflection into image...",
   "Finding the shape of your story...",
   "Creating your visual memory...",
-  "Woven your words into color and light...",
+  "Weaving your words into color and light...",
 ];
 
 export default function GeneratingScreen() {
@@ -39,15 +39,21 @@ export default function GeneratingScreen() {
 
         if (data.artworkUrl) {
           sessionStorage.setItem("artworkUrl", data.artworkUrl);
-          sessionStorage.setItem("submissionId", data.submissionId);
+          if (data.submissionId && data.stored !== false) {
+            sessionStorage.setItem("submissionId", data.submissionId);
+          } else {
+            sessionStorage.removeItem("submissionId");
+          }
           if (data.galleryUrl) {
             sessionStorage.setItem("galleryUrl", data.galleryUrl);
+          } else {
+            sessionStorage.removeItem("galleryUrl");
           }
         }
       } catch {
         // If generation fails, use a real bundled fallback image.
         sessionStorage.setItem("artworkUrl", "/art/abstract.jpg");
-        sessionStorage.setItem("submissionId", "demo-" + Date.now());
+        sessionStorage.removeItem("submissionId");
         sessionStorage.removeItem("galleryUrl");
       }
 

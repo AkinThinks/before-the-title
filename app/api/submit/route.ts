@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
       source,
     } = body;
 
-    if (!name || !String(name).trim()) {
+    if (!submissionId || !String(submissionId).trim()) {
       return NextResponse.json(
-        { error: "Credit name is required" },
+        { error: "Submission was not saved. Please try again." },
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const db = supabaseAdmin || supabase;
     if (isSupabaseConfigured() && db) {
       const update = {
-        name: String(name).trim(),
+        name: name && String(name).trim() ? String(name).trim() : null,
         social_handle: socialHandle || social_handle || null,
         email: email || null,
         context: context || null,
@@ -51,10 +51,12 @@ export async function POST(request: NextRequest) {
         source: normalizeSource(source || participantType),
       };
 
-      const { error } = await db
+      const { data, error } = await db
         .from("submissions")
         .update(update)
-        .eq("id", submissionId);
+        .eq("id", submissionId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         if (isMissingSocialHandleColumn(error)) {
@@ -67,17 +69,26 @@ export async function POST(request: NextRequest) {
             participant_type: update.participant_type,
             source: update.source,
           };
-          const { error: fallbackError } = await db
+          const { data: fallbackData, error: fallbackError } = await db
             .from("submissions")
             .update(fallbackUpdate)
-            .eq("id", submissionId);
+            .eq("id", submissionId)
+            .select("id")
+            .maybeSingle();
 
-          if (!fallbackError) {
+          if (!fallbackError && fallbackData) {
             return NextResponse.json({
               success: true,
               submissionId,
               socialHandleStored: false,
             });
+          }
+
+          if (!fallbackError && !fallbackData) {
+            return NextResponse.json(
+              { error: "Submission was not found. Please try again." },
+              { status: 404 }
+            );
           }
 
           console.error("Supabase fallback update error:", fallbackError);
@@ -86,6 +97,13 @@ export async function POST(request: NextRequest) {
 
         console.error("Supabase update error:", error);
         throw error;
+      }
+
+      if (!data) {
+        return NextResponse.json(
+          { error: "Submission was not found. Please try again." },
+          { status: 404 }
+        );
       }
     }
 

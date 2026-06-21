@@ -50,9 +50,9 @@ export default function ConsentScreen() {
             className="bg-surface rounded-tl-[24px] rounded-tr-[6px] rounded-br-[24px] rounded-bl-[6px] border border-border p-6 space-y-5"
           >
             <p className="text-sm text-muted leading-relaxed font-light">
-              By continuing, I understand that my submitted input and generated
+              By continuing, I understand that my submitted input and resulting
               artwork may be reviewed, curated and considered for inclusion in
-              the event&apos;s short film, website, recap materials and social media
+              the project&apos;s short film, website, recap materials and social media
               features. Submission does not guarantee inclusion. Personal
               identifying details will not be shared publicly unless separately
               authorized.

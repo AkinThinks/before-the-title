@@ -12,11 +12,11 @@ export default function FilmPage() {
         </h1>
         <p className="text-lg text-muted font-light leading-relaxed max-w-xl mx-auto">
           A collective film shaped by selected reflections, voices, and artworks
-          from the installation.
+          from the living archive.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Button href="/gallery" variant="secondary">
-            View Gallery
+            View Archive
           </Button>
           <Button href="/experience">Create a Piece</Button>
         </div>

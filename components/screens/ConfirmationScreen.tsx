@@ -85,7 +85,7 @@ export default function ConfirmationScreen() {
               variant="secondary"
               className="w-full"
             >
-              View the Gallery
+              View the Archive
             </Button>
             <div className="text-center pt-2">
               <button

@@ -24,6 +24,7 @@ function toPublicPiece(row: SubmissionRow) {
     artwork_url: row.artwork_url,
     name: canShowCredit ? row.name : null,
     social_handle: canShowCredit ? row.social_handle || null : null,
+    website_social_opt_in: canShowCredit,
     moderation_status: row.moderation_status || "pending",
   };
 }
@@ -52,7 +53,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ piece: null }, { status: 404 });
     }
 
-    if ((data.moderation_status || "pending") === "rejected") {
+    if ((data.moderation_status || "pending") !== "approved") {
       return NextResponse.json({ piece: null }, { status: 404 });
     }
 

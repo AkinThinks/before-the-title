@@ -29,17 +29,14 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS social_handle TEXT;
 -- Enable Row Level Security
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 
--- Public read policy (for admin dashboard)
-CREATE POLICY "Allow public read" ON submissions
-  FOR SELECT USING (true);
+-- Remove permissive demo policies from earlier deployments.
+DROP POLICY IF EXISTS "Allow public read" ON submissions;
+DROP POLICY IF EXISTS "Allow public insert" ON submissions;
+DROP POLICY IF EXISTS "Allow public update" ON submissions;
 
--- Public insert policy (for submissions)
-CREATE POLICY "Allow public insert" ON submissions
-  FOR INSERT WITH CHECK (true);
-
--- Public update policy (for admin curation)
-CREATE POLICY "Allow public update" ON submissions
-  FOR UPDATE USING (true);
+-- No anon read/update policies are created here. Production reads, writes, and
+-- curation updates should go through the Next.js API routes using
+-- SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS server-side.
 
 -- Create an index for common queries
 CREATE INDEX IF NOT EXISTS idx_submissions_source ON submissions(source);

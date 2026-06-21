@@ -40,7 +40,7 @@ export default function WelcomeScreen() {
         >
           <motion.div custom={0} variants={fadeUp}>
             <p className="text-sm tracking-[0.3em] uppercase text-muted-light font-light">
-              An Interactive Art Experience
+              A Living Art Project
             </p>
           </motion.div>
 
@@ -69,9 +69,9 @@ export default function WelcomeScreen() {
             variants={fadeUp}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4"
           >
-            <Button href="/reflect">Begin</Button>
+            <Button href="/reflect">Add Your Reflection</Button>
             <Button href="/event" variant="ghost">
-              Event Details
+              Project Details
             </Button>
           </motion.div>
 
@@ -80,7 +80,7 @@ export default function WelcomeScreen() {
             variants={fadeUp}
             className="text-xs text-muted-light font-light leading-relaxed max-w-xs mx-auto pt-6"
           >
-            A free interactive art experience about who we are beyond our titles.
+            An ongoing participatory art project about who we are beyond our titles.
           </motion.p>
         </motion.div>
       </div>

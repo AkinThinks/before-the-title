@@ -117,20 +117,20 @@ const steps = [
   {
     n: "02",
     title: "Become art",
-    body: "Your reflection is gently transformed into a one-of-a-kind piece of generative artwork, created in the moment, just for you.",
+    body: "Your reflection becomes a one-of-a-kind visual artwork, shaped in the moment from your words.",
   },
   {
     n: "03",
     title: "Join the gallery",
-    body: "Your piece takes its place in a living, collective gallery of strangers, a portrait of who we all are beneath our titles.",
+    body: "Your piece takes its place in a living archive of strangers, memory, and who we are beneath our titles.",
   },
 ];
 
-const facts = [
-  { label: "Admission", value: "Free" },
-  { label: "Duration", value: "~3 min" },
-  { label: "Location", value: "Newark, NJ" },
-  { label: "All ages", value: "Welcome" },
+const rhythm = [
+  { label: "Current prompt", value: "Who were you before the title?" },
+  { label: "Participation", value: "Open online, with in-person chapters" },
+  { label: "Archive", value: "Curated public gallery" },
+  { label: "Cadence", value: "New prompts and featured selections over time" },
 ];
 
 export default function EventLanding() {
@@ -168,11 +168,11 @@ export default function EventLanding() {
             variants={fadeUp}
             className="text-base text-muted leading-relaxed font-light max-w-lg mx-auto"
           >
-            A free, interactive art experience about who we are beyond our
+            An ongoing participatory art project about who we are beyond our
             titles. Step away from the labels you carry, like your job, your role,
             and your résumé, and answer one honest question. In a few quiet moments,
-            your words become an original artwork that joins a growing,
-            collective gallery of the people who came before you.
+            your words become personal artwork that joins a living archive of the
+            people who came before you.
           </motion.p>
 
           <motion.div
@@ -180,9 +180,9 @@ export default function EventLanding() {
             variants={fadeUp}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
           >
-            <Button href="/experience?src=online">Begin the Experience</Button>
+            <Button href="/experience?src=online">Add Your Reflection</Button>
             <Button href="/gallery" variant="secondary">
-              View Gallery
+              View Archive
             </Button>
           </motion.div>
         </motion.section>
@@ -225,28 +225,93 @@ export default function EventLanding() {
           </div>
         </section>
 
-        {/* Details */}
+        {/* Project rhythm */}
         <motion.section
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-60px" }}
           custom={0}
           variants={fadeUp}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-px overflow-hidden rounded-2xl border border-border bg-border"
+          className="space-y-7"
         >
-          {facts.map((f) => (
-            <div
-              key={f.label}
-              className="bg-surface/90 px-4 py-5 text-center space-y-1"
-            >
-              <p className="font-display text-xl tracking-tight text-foreground">
-                {f.value}
-              </p>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-light font-light">
-                {f.label}
+          <div className="text-center space-y-3">
+            <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
+              Project rhythm
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl tracking-tight">
+              Built to keep unfolding
+            </h2>
+          </div>
+
+          <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2">
+            {rhythm.map((item) => (
+              <div
+                key={item.label}
+                className="bg-surface/90 px-5 py-5 text-left space-y-2"
+              >
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-light font-light">
+                  {item.label}
+                </p>
+                <p className="font-display text-xl tracking-tight text-foreground">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* Creator */}
+        <motion.section
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          custom={0}
+          variants={fadeUp}
+          className="grid gap-8 sm:grid-cols-[0.9fr_1.1fr] sm:items-center"
+        >
+          <div className="space-y-3">
+            <div className="relative mx-auto aspect-[4/5] w-full max-w-[260px] overflow-hidden rounded-tl-[28px] rounded-tr-[8px] rounded-br-[28px] rounded-bl-[8px] border border-border bg-surface shadow-2xl shadow-primary/10 sm:mx-0">
+              <Image
+                src="/creator/akin-before-the-title.png"
+                alt="Akin as a child"
+                fill
+                sizes="(max-width: 640px) 260px, 240px"
+                className="object-cover"
+                priority={false}
+                unoptimized
+              />
+            </div>
+            <p className="text-center text-xs text-muted-light font-light sm:text-left">
+              Akin, before the title.
+            </p>
+          </div>
+
+          <div className="space-y-5 text-center sm:text-left">
+            <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
+              Created by
+            </p>
+            <div className="space-y-3">
+              <h2 className="font-display text-3xl sm:text-4xl tracking-tight">
+                Akin Tunde
+              </h2>
+              <p className="text-sm tracking-[0.16em] uppercase text-primary font-medium">
+                Project and Experience Creator
               </p>
             </div>
-          ))}
+            <p className="text-muted font-light leading-relaxed">
+              Before the Title was created and curated as an invitation to
+              remember the person beneath the role, before the resume, before
+              the performance, before the title.
+            </p>
+            <a
+              href="https://www.instagram.com/alin.bullion"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-[10px] border border-primary px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+            >
+              Instagram
+            </a>
+          </div>
         </motion.section>
 
         {/* Sponsors */}
@@ -260,7 +325,7 @@ export default function EventLanding() {
             className="space-y-7"
           >
             <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
-              Presented by
+              First presented with
             </p>
             <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-10">
               {presentedBy.map((s) => (
@@ -289,8 +354,8 @@ export default function EventLanding() {
         </section>
 
         <p className="text-center text-xs text-muted-light font-light leading-relaxed max-w-xs mx-auto">
-          An interactive installation about identity, memory, and the selves we
-          set aside.
+          An ongoing art project about identity, memory, and the selves we set
+          aside.
         </p>
       </div>
     </main>
