@@ -22,6 +22,7 @@ type Sponsor = {
   src: string;
   name: string;
   href?: string;
+  variant?: "card" | "tile";
 };
 
 /**
@@ -94,7 +95,12 @@ function LogoCard({
 const presentedBy: Sponsor[] = [
   { src: "/logos/north2shore.png", name: "North to Shore", href: "https://northtoshore.com" },
   { src: "/logos/newark-arts.png", name: "Newark Arts", href: "https://www.newarkarts.org" },
-  { src: "/logos/salesparrot.png", name: "SalesParrot", href: "https://www.salesparrot.com" },
+  {
+    src: "/logos/salesparrot.png",
+    name: "SalesParrot",
+    href: "https://www.salesparrot.com",
+    variant: "tile",
+  },
 ];
 
 const supportedBy: Sponsor[] = [
@@ -266,7 +272,7 @@ export default function EventLanding() {
             </p>
             <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-10">
               {presentedBy.map((s) => (
-                <LogoCard key={s.name} sponsor={s} variant="card" />
+                <LogoCard key={s.name} sponsor={s} variant={s.variant || "card"} />
               ))}
             </div>
           </motion.div>
