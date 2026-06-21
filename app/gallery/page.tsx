@@ -50,10 +50,10 @@ export default function GalleryPage() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button href="/experience" variant="secondary">
-              Add Yours
+              Add Your Reflection
             </Button>
             <Button href="/film" variant="ghost">
-              Short Film
+              Project Film
             </Button>
           </div>
         </motion.header>
@@ -67,7 +67,7 @@ export default function GalleryPage() {
             <p className="text-muted-light font-light">
               The public archive is opening soon.
             </p>
-            <Button href="/experience">Create a Piece</Button>
+            <Button href="/experience">Add Your Reflection</Button>
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

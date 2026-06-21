@@ -52,7 +52,7 @@ export default function ConsentScreen() {
             <p className="text-sm text-muted leading-relaxed font-light">
               By continuing, I understand that my submitted input and resulting
               artwork may be reviewed, curated and considered for inclusion in
-              the project&apos;s short film, website, recap materials and social media
+              the public archive, future project chapters, website and social media
               features. Submission does not guarantee inclusion. Personal
               identifying details will not be shared publicly unless separately
               authorized.

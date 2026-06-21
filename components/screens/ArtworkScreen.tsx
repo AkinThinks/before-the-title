@@ -11,6 +11,8 @@ export default function ArtworkScreen() {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -42,6 +44,56 @@ export default function ArtworkScreen() {
       window.open(artworkUrl, "_blank");
     }
     setDownloading(false);
+  };
+
+  const handleShare = async () => {
+    if (!artworkUrl || sharing) return;
+    setSharing(true);
+    setShareMessage("");
+
+    const shareText =
+      "I made this with Before the Title, a living archive of who we were before the world named us.";
+    const projectUrl = `${window.location.origin}/experience`;
+
+    try {
+      const response = await fetch(artworkUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "before-the-title.png", {
+        type: blob.type || "image/png",
+      });
+      const filePayload = {
+        title: "Before the Title",
+        text: shareText,
+        files: [file],
+      };
+
+      if (navigator.canShare?.(filePayload)) {
+        await navigator.share(filePayload);
+      } else if (navigator.share) {
+        await navigator.share({
+          title: "Before the Title",
+          text: shareText,
+          url: projectUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(projectUrl);
+        setShareMessage("Project link copied.");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setSharing(false);
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(projectUrl);
+        setShareMessage("Project link copied.");
+      } catch {
+        setShareMessage("Download the artwork to share it from your device.");
+      }
+    }
+
+    setSharing(false);
   };
 
   return (
@@ -122,7 +174,7 @@ export default function ArtworkScreen() {
                 variant="secondary"
                 className="w-full"
               >
-                Add to the Collective Story
+                Submit to the Living Archive
               </Button>
             ) : (
               <div className="space-y-3">
@@ -138,6 +190,23 @@ export default function ArtworkScreen() {
                   Try Again
                 </Button>
               </div>
+            )}
+
+            {artworkUrl && (
+              <Button
+                onClick={handleShare}
+                variant="ghost"
+                disabled={sharing}
+                className="w-full"
+              >
+                {sharing ? "Opening Share..." : "Share Artwork"}
+              </Button>
+            )}
+
+            {shareMessage && (
+              <p className="text-center text-xs text-muted-light font-light">
+                {shareMessage}
+              </p>
             )}
 
             <div className="text-center pt-2">

@@ -96,13 +96,13 @@ export default function ContributeScreen() {
             <h2
               className="font-display text-3xl sm:text-4xl leading-tight tracking-tight mb-4"
             >
-              Add your piece to
+              Submit your piece
               <br />
-              the collective story
+              to the archive
             </h2>
             <p className="text-muted font-light text-sm leading-relaxed">
-              Selected submissions may be curated into a short film telling a
-              story shaped by the community&apos;s voices, memories and imagination.
+              Your piece will be received for review. Approved selections may
+              appear in the public archive or future project chapters.
             </p>
           </motion.div>
 
@@ -194,7 +194,7 @@ export default function ContributeScreen() {
                 </div>
               </div>
               <span className="text-sm text-muted leading-snug">
-                My submission may be considered for the short film
+                My submission may be considered for future film or project chapters
               </span>
             </label>
 
@@ -215,7 +215,7 @@ export default function ContributeScreen() {
                 </div>
               </div>
               <span className="text-sm text-muted leading-snug">
-                My artwork may be considered for website/social features
+                My artwork may be considered for public archive, website, or social features
               </span>
             </label>
           </motion.div>
@@ -269,7 +269,7 @@ export default function ContributeScreen() {
               disabled={submitting}
               className="w-full"
             >
-              {submitting ? "Submitting..." : "Submit to the Collective Story"}
+              {submitting ? "Submitting..." : "Submit to the Living Archive"}
             </Button>
           </motion.div>
         </form>

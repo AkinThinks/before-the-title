@@ -116,7 +116,7 @@ export default function GalleryDetailPage() {
               View Archive
             </Button>
             <Button href="/film" variant="ghost">
-              Short Film
+              Project Film
             </Button>
           </div>
         </motion.section>

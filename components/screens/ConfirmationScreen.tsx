@@ -71,14 +71,14 @@ export default function ConfirmationScreen() {
           <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp}>
             <p className="text-muted font-light leading-relaxed max-w-sm mx-auto">
               Thank you for contributing to Before the Title. Your artwork has
-              been saved. Selected submissions will be reviewed for the final
-              short film, website and social media features.
+              been received for curation. If approved, it may become part of
+              the public archive or future project chapters.
             </p>
           </motion.div>
 
           <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="space-y-3 pt-4">
             <Button onClick={handleDownloadAgain} className="w-full">
-              Download Again
+              Download Artwork
             </Button>
             <Button
               href="/gallery"
@@ -87,6 +87,14 @@ export default function ConfirmationScreen() {
             >
               View the Archive
             </Button>
+            <a
+              href="https://www.instagram.com/alin.bullion"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[56px] w-full items-center justify-center rounded-[10px] bg-transparent px-8 py-4 text-base font-medium text-muted transition-all duration-300 ease-out hover:bg-surface-warm hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
+            >
+              Follow the Project
+            </a>
             <div className="text-center pt-2">
               <button
                 onClick={() => {
@@ -95,7 +103,7 @@ export default function ConfirmationScreen() {
                 }}
                 className="text-sm text-muted-light hover:text-muted transition-colors font-light"
               >
-                Return to Start
+                Create Another Reflection
               </button>
             </div>
           </motion.div>
