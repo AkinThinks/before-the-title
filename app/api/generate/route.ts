@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { moderateReflection, type ModerationDecision } from "@/lib/moderation";
 
 // Image generation can take 20-30s; allow headroom on serverless platforms.
 export const maxDuration = 60;
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
   // Read the body once up front so the catch block can still build a fallback.
   let reflection = "";
   let source = "online";
+  let moderation: ModerationDecision | null = null;
   try {
     const body = await request.json();
     reflection = body.reflection || "";
@@ -45,6 +47,20 @@ export async function POST(request: NextRequest) {
     if (!reflection) {
       return NextResponse.json(
         { error: "Reflection is required" },
+        { status: 400 }
+      );
+    }
+
+    moderation = await moderateReflection(reflection);
+
+    if (moderation.safetyStatus === "rejected") {
+      return NextResponse.json(
+        {
+          error: "That reflection cannot be processed. Please try a different reflection.",
+          stored: false,
+          safetyStatus: moderation.safetyStatus,
+          moderationStatus: moderation.moderationStatus,
+        },
         { status: 400 }
       );
     }
@@ -131,7 +147,14 @@ Make it feel like one artwork in a larger living archive of people remembering w
         artwork_url: artworkUrl,
         download_url: originalArtworkUrl,
         consent: true,
-        moderation_status: "pending",
+        safety_status: moderation.safetyStatus,
+        moderation_flagged: moderation.flagged,
+        moderation_categories: moderation.categories,
+        moderation_scores: moderation.scores,
+        moderation_model: moderation.model,
+        moderation_reason: moderation.reason,
+        moderation_checked_at: new Date().toISOString(),
+        moderation_status: moderation.moderationStatus,
       });
 
       if (error) {
@@ -155,6 +178,8 @@ Make it feel like one artwork in a larger living archive of people remembering w
       stored,
       imagePersisted,
       archiveError,
+      safetyStatus: moderation.safetyStatus,
+      moderationStatus: moderation.moderationStatus,
     });
   } catch (error) {
     console.error("Generation error:", error);
@@ -173,6 +198,17 @@ Make it feel like one artwork in a larger living archive of people remembering w
         artwork_url: artworkUrl,
         download_url: null,
         consent: true,
+        safety_status: moderation?.safetyStatus || "error",
+        moderation_flagged: true,
+        moderation_categories: moderation?.categories || {},
+        moderation_scores: moderation?.scores || {},
+        moderation_model:
+          moderation?.model ||
+          process.env.OPENAI_MODERATION_MODEL ||
+          "omni-moderation-latest",
+        moderation_reason:
+          moderation?.reason || "Artwork generation failed after moderation.",
+        moderation_checked_at: moderation ? new Date().toISOString() : null,
         moderation_status: "pending",
       });
 
@@ -193,6 +229,8 @@ Make it feel like one artwork in a larger living archive of people remembering w
       archiveError: stored
         ? null
         : "Artwork generation fell back and was not saved to Supabase.",
+      safetyStatus: moderation?.safetyStatus || "error",
+      moderationStatus: "pending",
     });
   }
 }

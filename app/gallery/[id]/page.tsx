@@ -108,7 +108,7 @@ export default function GalleryDetailPage() {
           <p className="text-sm text-muted-light font-light leading-relaxed">
             {isPublic
               ? "This piece is part of the public collective gallery."
-              : "Public gallery placement requires archive permission and curator approval."}
+              : "Public gallery placement requires archive permission and safety clearance."}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">

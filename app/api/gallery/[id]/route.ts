@@ -29,6 +29,10 @@ function toPublicPiece(row: SubmissionRow) {
   };
 }
 
+function hasPublicArtworkUrl(url: string | null) {
+  return Boolean(url && !url.startsWith("data:"));
+}
+
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
@@ -55,7 +59,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     if (
       (data.moderation_status || "pending") !== "approved" ||
-      !data.website_social_opt_in
+      !data.website_social_opt_in ||
+      !hasPublicArtworkUrl(data.artwork_url)
     ) {
       return NextResponse.json({ piece: null }, { status: 404 });
     }

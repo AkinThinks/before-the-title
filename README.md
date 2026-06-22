@@ -42,10 +42,13 @@ Create a public storage bucket named `artworks` for persisted generated images.
 
 ## Curation
 
-Submissions are created with `moderation_status = pending`. The public archive
-only shows pieces that have both `website_social_opt_in = true` and
-`moderation_status = approved`. Use `/admin` to review, approve, reject, add
-notes, and export submissions.
+Submissions are checked by the moderation helper before publishing. Safe pieces
+are marked `moderation_status = approved` automatically; flagged or moderation
+error cases stay `pending`; severe violations are marked `rejected`. The public
+archive only shows pieces that have `website_social_opt_in = true`,
+`moderation_status = approved`, and a persisted artwork URL. Use `/admin` to
+review flagged work, hide live work, recheck older submissions, add notes, and
+export submissions.
 
 Set `ADMIN_PASSWORD` in production. Without it, the admin API fails closed in
 production.

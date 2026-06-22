@@ -105,9 +105,9 @@ export default function ContributeScreen() {
               for curation
             </h2>
             <p className="text-muted font-light text-sm leading-relaxed">
-              Public archive placement requires your permission below and
-              curator approval. Approved selections may appear in the archive
-              or future project chapters.
+              Public archive placement requires your permission below and a
+              safety check. Pieces that need review stay private until they are
+              cleared.
             </p>
           </motion.div>
 
@@ -277,7 +277,7 @@ export default function ContributeScreen() {
               disabled={submitting}
               className="w-full"
             >
-              {submitting ? "Submitting..." : "Submit for Curation Review"}
+              {submitting ? "Submitting..." : "Submit to the Archive"}
             </Button>
           </motion.div>
         </form>

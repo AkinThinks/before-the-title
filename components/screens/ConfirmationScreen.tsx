@@ -71,8 +71,8 @@ export default function ConfirmationScreen() {
           <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp}>
             <p className="text-muted font-light leading-relaxed max-w-sm mx-auto">
               Thank you for contributing to Before the Title. Your artwork has
-              been received for curation. It will not appear publicly unless it
-              has archive permission and is approved.
+              been received. If you gave public archive permission and it passes
+              safety review, it can appear automatically.
             </p>
           </motion.div>
 

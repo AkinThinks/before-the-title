@@ -174,7 +174,7 @@ export default function ArtworkScreen() {
                 variant="secondary"
                 className="w-full"
               >
-                Submit for Curation
+                Submit to the Archive
               </Button>
             ) : (
               <div className="space-y-3">

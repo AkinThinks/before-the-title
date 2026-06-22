@@ -29,6 +29,10 @@ function toPublicPiece(row: SubmissionRow) {
   };
 }
 
+function hasPublicArtworkUrl(url: string | null) {
+  return Boolean(url && !url.startsWith("data:"));
+}
+
 export async function GET() {
   const db = supabaseAdmin || supabase;
 
@@ -47,7 +51,8 @@ export async function GET() {
       .filter(
         (row) =>
           (row.moderation_status || "pending") === "approved" &&
-          Boolean(row.website_social_opt_in)
+          Boolean(row.website_social_opt_in) &&
+          hasPublicArtworkUrl(row.artwork_url)
       )
       .map(toPublicPiece);
 

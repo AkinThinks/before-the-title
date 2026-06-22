@@ -20,11 +20,25 @@ CREATE TABLE IF NOT EXISTS submissions (
   selected_for_website BOOLEAN DEFAULT false,
   selected_for_social BOOLEAN DEFAULT false,
   curator_notes TEXT DEFAULT '',
+  safety_status TEXT DEFAULT 'unchecked' CHECK (safety_status IN ('unchecked', 'safe', 'review', 'rejected', 'error')),
+  moderation_flagged BOOLEAN DEFAULT false,
+  moderation_categories JSONB DEFAULT '{}'::jsonb,
+  moderation_scores JSONB DEFAULT '{}'::jsonb,
+  moderation_model TEXT,
+  moderation_reason TEXT,
+  moderation_checked_at TIMESTAMPTZ,
   moderation_status TEXT DEFAULT 'pending' CHECK (moderation_status IN ('pending', 'approved', 'rejected'))
 );
 
 -- Existing deployments: add newer optional columns without rebuilding the table.
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS social_handle TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS safety_status TEXT DEFAULT 'unchecked' CHECK (safety_status IN ('unchecked', 'safe', 'review', 'rejected', 'error'));
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_flagged BOOLEAN DEFAULT false;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_categories JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_scores JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_model TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_reason TEXT;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_checked_at TIMESTAMPTZ;
 
 -- Enable Row Level Security
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
@@ -41,4 +55,5 @@ DROP POLICY IF EXISTS "Allow public update" ON submissions;
 -- Create an index for common queries
 CREATE INDEX IF NOT EXISTS idx_submissions_source ON submissions(source);
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(moderation_status);
+CREATE INDEX IF NOT EXISTS idx_submissions_safety ON submissions(safety_status);
 CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at DESC);

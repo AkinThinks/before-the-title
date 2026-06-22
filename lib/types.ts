@@ -17,6 +17,13 @@ export interface Submission {
   selected_for_website: boolean;
   selected_for_social: boolean;
   curator_notes: string;
+  safety_status: "unchecked" | "safe" | "review" | "rejected" | "error";
+  moderation_flagged: boolean;
+  moderation_categories: Record<string, boolean>;
+  moderation_scores: Record<string, number>;
+  moderation_model: string | null;
+  moderation_reason: string | null;
+  moderation_checked_at: string | null;
   moderation_status: "pending" | "approved" | "rejected";
 }
 

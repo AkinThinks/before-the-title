@@ -3,6 +3,7 @@ import {
   supabaseAdmin,
   getSupabaseServerConfigStatus,
 } from "@/lib/supabase";
+import { getModerationModel, moderateReflection } from "@/lib/moderation";
 
 // Gate the dashboard behind ADMIN_PASSWORD. Local development may run without
 // it, but production fails closed if the env var is missing.
@@ -15,6 +16,10 @@ function isAuthorized(request: NextRequest): boolean {
 const unauthorized = () =>
   NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+function hasPublicArtworkUrl(url: unknown) {
+  return typeof url === "string" && url.length > 0 && !url.startsWith("data:");
+}
+
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) return unauthorized();
 
@@ -26,6 +31,7 @@ export async function GET(request: NextRequest) {
       ...getSupabaseServerConfigStatus(),
       hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY),
       hasAdminPassword: Boolean(process.env.ADMIN_PASSWORD),
+      moderationModel: getModerationModel(),
       runtime: process.env.NODE_ENV || "development",
     });
   }
@@ -72,6 +78,13 @@ export async function GET(request: NextRequest) {
           context: "Visiting from Brooklyn",
           short_film_opt_in: true,
           website_social_opt_in: true,
+          safety_status: "safe",
+          moderation_flagged: false,
+          moderation_categories: {},
+          moderation_scores: {},
+          moderation_model: "demo",
+          moderation_reason: null,
+          moderation_checked_at: new Date().toISOString(),
           moderation_status: "pending",
           curator_notes: "",
         },
@@ -87,6 +100,13 @@ export async function GET(request: NextRequest) {
           context: null,
           short_film_opt_in: true,
           website_social_opt_in: false,
+          safety_status: "safe",
+          moderation_flagged: false,
+          moderation_categories: {},
+          moderation_scores: {},
+          moderation_model: "demo",
+          moderation_reason: null,
+          moderation_checked_at: new Date().toISOString(),
           moderation_status: "approved",
           curator_notes: "Beautiful simplicity",
         },
@@ -108,8 +128,18 @@ export async function GET(request: NextRequest) {
         inPerson: submissions.filter((s) => s.source === "in-person").length,
         online: submissions.filter((s) => s.source === "online").length,
         shortFilm: submissions.filter((s) => s.short_film_opt_in).length,
+        safe: submissions.filter((s) => s.safety_status === "safe").length,
+        flagged: submissions.filter(
+          (s) =>
+            s.moderation_flagged ||
+            s.safety_status === "review" ||
+            s.safety_status === "error"
+        ).length,
         archiveLive: submissions.filter(
-          (s) => s.moderation_status === "approved" && s.website_social_opt_in
+          (s) =>
+            s.moderation_status === "approved" &&
+            s.website_social_opt_in &&
+            hasPublicArtworkUrl(s.artwork_url)
         ).length,
       });
     }
@@ -132,6 +162,8 @@ export async function GET(request: NextRequest) {
       inPerson: 1,
       online: 1,
       shortFilm: 2,
+      safe: 2,
+      flagged: 0,
       archiveLive: 0,
     });
   }
@@ -147,6 +179,46 @@ export async function POST(request: NextRequest) {
     const { action, id, field, value } = body;
 
     const db = supabaseAdmin;
+
+    if (action === "moderate" && db) {
+      const { data: submission, error: lookupError } = await db
+        .from("submissions")
+        .select("id,reflection")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (lookupError) {
+        console.error("Supabase moderation lookup error:", lookupError);
+        return NextResponse.json({ error: lookupError.message }, { status: 500 });
+      }
+
+      if (!submission) {
+        return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+      }
+
+      const moderation = await moderateReflection(submission.reflection);
+      const { error: updateError } = await db
+        .from("submissions")
+        .update({
+          safety_status: moderation.safetyStatus,
+          moderation_flagged: moderation.flagged,
+          moderation_categories: moderation.categories,
+          moderation_scores: moderation.scores,
+          moderation_model: moderation.model,
+          moderation_reason: moderation.reason,
+          moderation_checked_at: new Date().toISOString(),
+          moderation_status: moderation.moderationStatus,
+        })
+        .eq("id", id);
+
+      if (updateError) {
+        console.error("Supabase moderation update error:", updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, moderation });
+    }
+
     if (action === "update" && db) {
       const editableFields = new Set([
         "moderation_status",

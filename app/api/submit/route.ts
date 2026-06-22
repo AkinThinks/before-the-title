@@ -3,6 +3,11 @@ import {
   supabaseAdmin,
   getSupabaseServerConfigStatus,
 } from "@/lib/supabase";
+import {
+  moderationStatusFromSafety,
+  type ArchiveModerationStatus,
+  type SafetyStatus,
+} from "@/lib/moderation";
 
 function normalizeSource(value: unknown) {
   return value === "in-person" || value === "inperson" ? "in-person" : "online";
@@ -15,6 +20,32 @@ function isMissingSocialHandleColumn(error: { message?: string; code?: string })
     message.includes("social_handle") ||
     message.includes("schema cache")
   );
+}
+
+function normalizeSafetyStatus(value: unknown): SafetyStatus {
+  if (
+    value === "safe" ||
+    value === "review" ||
+    value === "rejected" ||
+    value === "error" ||
+    value === "unchecked"
+  ) {
+    return value;
+  }
+
+  return "unchecked";
+}
+
+function resolveSubmissionStatus(
+  currentStatus: unknown,
+  safetyStatus: SafetyStatus
+): ArchiveModerationStatus {
+  if (currentStatus === "rejected") return "rejected";
+  if (currentStatus === "approved" && safetyStatus === "unchecked") {
+    return "approved";
+  }
+
+  return moderationStatusFromSafety(safetyStatus);
 }
 
 export async function POST(request: NextRequest) {
@@ -43,6 +74,29 @@ export async function POST(request: NextRequest) {
 
     const db = supabaseAdmin;
     if (db) {
+      const { data: existing, error: lookupError } = await db
+        .from("submissions")
+        .select("id,safety_status,moderation_status")
+        .eq("id", submissionId)
+        .maybeSingle();
+
+      if (lookupError) {
+        console.error("Supabase lookup error:", lookupError);
+        throw lookupError;
+      }
+
+      if (!existing) {
+        return NextResponse.json(
+          { error: "Submission was not found. Please try again." },
+          { status: 404 }
+        );
+      }
+
+      const nextModerationStatus = resolveSubmissionStatus(
+        existing.moderation_status,
+        normalizeSafetyStatus(existing.safety_status)
+      );
+
       const update = {
         name: name && String(name).trim() ? String(name).trim() : null,
         social_handle: socialHandle || social_handle || null,
@@ -52,6 +106,7 @@ export async function POST(request: NextRequest) {
         website_social_opt_in: websiteSocialOptIn || false,
         participant_type: participantType || "online",
         source: normalizeSource(source || participantType),
+        moderation_status: nextModerationStatus,
       };
 
       const { data, error } = await db
@@ -71,6 +126,7 @@ export async function POST(request: NextRequest) {
             website_social_opt_in: update.website_social_opt_in,
             participant_type: update.participant_type,
             source: update.source,
+            moderation_status: update.moderation_status,
           };
           const { data: fallbackData, error: fallbackError } = await db
             .from("submissions")

@@ -6,6 +6,10 @@ import { motion } from "framer-motion";
 
 const PW_KEY = "btt_admin_pw";
 
+type AdminTab = "all" | "live" | "review" | "approved" | "rejected";
+type ModerationStatus = "pending" | "approved" | "rejected";
+type SafetyStatus = "unchecked" | "safe" | "review" | "rejected" | "error";
+
 interface Submission {
   id: string;
   created_at: string;
@@ -19,7 +23,14 @@ interface Submission {
   context: string | null;
   short_film_opt_in: boolean;
   website_social_opt_in: boolean;
-  moderation_status: string;
+  safety_status: SafetyStatus | null;
+  moderation_flagged: boolean | null;
+  moderation_categories: Record<string, boolean> | null;
+  moderation_scores: Record<string, number> | null;
+  moderation_model: string | null;
+  moderation_reason: string | null;
+  moderation_checked_at: string | null;
+  moderation_status: ModerationStatus;
   curator_notes: string;
 }
 
@@ -31,11 +42,40 @@ interface Stats {
   inPerson: number;
   online: number;
   shortFilm: number;
+  safe: number;
+  flagged: number;
   archiveLive: number;
 }
 
+function hasPublicArtworkUrl(url: string | null) {
+  return Boolean(url && !url.startsWith("data:"));
+}
+
+function isLive(submission: Submission) {
+  return (
+    submission.moderation_status === "approved" &&
+    submission.website_social_opt_in &&
+    hasPublicArtworkUrl(submission.artwork_url)
+  );
+}
+
+function safetyCopy(status: SafetyStatus | null) {
+  if (status === "safe") return "Safety: Safe";
+  if (status === "review") return "Safety: Review";
+  if (status === "rejected") return "Safety: Rejected";
+  if (status === "error") return "Safety: Error";
+  return "Safety: Unchecked";
+}
+
+function safetyClass(status: SafetyStatus | null) {
+  if (status === "safe") return "bg-green-100 text-green-700";
+  if (status === "review" || status === "error") return "bg-yellow-100 text-yellow-700";
+  if (status === "rejected") return "bg-red-100 text-red-700";
+  return "bg-surface-warm text-muted";
+}
+
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [activeTab, setActiveTab] = useState<AdminTab>("all");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [stats, setStats] = useState<Stats>({
     total: 0,
@@ -45,6 +85,8 @@ export default function AdminPage() {
     inPerson: 0,
     online: 0,
     shortFilm: 0,
+    safe: 0,
+    flagged: 0,
     archiveLive: 0,
   });
   const [loading, setLoading] = useState(false);
@@ -168,8 +210,44 @@ export default function AdminPage() {
     }
   };
 
+  const recheckSubmission = async (id: string) => {
+    setUpdating(id);
+    setUpdateError("");
+    try {
+      const pw = sessionStorage.getItem(PW_KEY) || "";
+      const response = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": pw },
+        body: JSON.stringify({ action: "moderate", id }),
+      });
+
+      if (response.status === 401) {
+        sessionStorage.removeItem(PW_KEY);
+        setAuthed(false);
+        setAuthError(true);
+        throw new Error("Admin password was rejected.");
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Moderation recheck failed.");
+      }
+
+      await fetchData();
+    } catch (error) {
+      console.error("Moderation recheck failed:", error);
+      setUpdateError(
+        error instanceof Error ? error.message : "Moderation recheck failed."
+      );
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const filtered = submissions.filter((s) => {
     if (activeTab === "all") return true;
+    if (activeTab === "live") return isLive(s);
+    if (activeTab === "review") return s.moderation_status === "pending";
     return s.moderation_status === activeTab;
   });
 
@@ -190,6 +268,9 @@ export default function AdminPage() {
       "Context",
       "Short Film",
       "Web/Social",
+      "Safety Status",
+      "Moderation Flagged",
+      "Moderation Reason",
       "Status",
     ];
     const rows = submissions.map((s) => [
@@ -206,6 +287,9 @@ export default function AdminPage() {
       s.context || "",
       s.short_film_opt_in ? "Yes" : "No",
       s.website_social_opt_in ? "Yes" : "No",
+      s.safety_status || "unchecked",
+      s.moderation_flagged ? "Yes" : "No",
+      s.moderation_reason || "",
       s.moderation_status,
     ]);
     const csv = [
@@ -287,16 +371,18 @@ export default function AdminPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-10 gap-3 mb-8"
         >
           {[
             { label: "Total", value: stats.total, color: "text-foreground" },
-            { label: "Pending", value: stats.pending, color: "text-yellow-600" },
+            { label: "Review", value: stats.pending, color: "text-yellow-600" },
             { label: "Approved", value: stats.approved, color: "text-green-600" },
             { label: "Rejected", value: stats.rejected, color: "text-red-600" },
             { label: "In-Person", value: stats.inPerson, color: "text-primary" },
             { label: "Online", value: stats.online, color: "text-secondary" },
             { label: "Short Film", value: stats.shortFilm, color: "text-accent-teal" },
+            { label: "Safe", value: stats.safe, color: "text-green-700" },
+            { label: "Flagged", value: stats.flagged, color: "text-yellow-700" },
             { label: "Archive Live", value: stats.archiveLive, color: "text-green-700" },
           ].map((stat) => (
             <div
@@ -311,7 +397,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {(["all", "pending", "approved", "rejected"] as const).map((tab) => (
+          {(["all", "live", "review", "approved", "rejected"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -321,7 +407,9 @@ export default function AdminPage() {
                   : "bg-surface border border-border text-muted hover:border-primary/30"
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === "review"
+                ? "Review"
+                : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -375,6 +463,13 @@ export default function AdminPage() {
                       >
                         {submission.moderation_status}
                       </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${safetyClass(
+                          submission.safety_status
+                        )}`}
+                      >
+                        {safetyCopy(submission.safety_status)}
+                      </span>
                     </div>
 
                     <p className="text-lg leading-relaxed">&ldquo;{submission.reflection}&rdquo;</p>
@@ -397,20 +492,45 @@ export default function AdminPage() {
                       </span>
                       <span
                         className={
-                          submission.moderation_status === "approved" &&
-                          submission.website_social_opt_in
+                          isLive(submission)
                             ? "text-green-700 font-medium"
                             : ""
                         }
                       >
-                        {submission.moderation_status === "approved" &&
-                        submission.website_social_opt_in
+                        {isLive(submission)
                           ? "Archive: Live"
                           : submission.moderation_status === "approved"
                           ? "Archive: No permission"
-                          : "Archive: Not live"}
+                          : submission.moderation_status === "pending"
+                          ? "Archive: In review"
+                          : "Archive: Hidden"}
                       </span>
                     </div>
+
+                    {(submission.moderation_reason ||
+                      submission.moderation_flagged ||
+                      submission.safety_status === "unchecked") && (
+                      <div className="space-y-1 text-xs text-muted-light">
+                        {submission.moderation_reason && (
+                          <p>{submission.moderation_reason}</p>
+                        )}
+                        {submission.safety_status === "unchecked" && (
+                          <p>Run a safety recheck for older submissions.</p>
+                        )}
+                        {submission.moderation_categories &&
+                          Object.entries(submission.moderation_categories).some(
+                            ([, active]) => active
+                          ) && (
+                            <p>
+                              Categories:{" "}
+                              {Object.entries(submission.moderation_categories)
+                                .filter(([, active]) => active)
+                                .map(([category]) => category)
+                                .join(", ")}
+                            </p>
+                          )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="w-full lg:w-40 shrink-0">
@@ -440,8 +560,7 @@ export default function AdminPage() {
                         No image yet
                       </div>
                     )}
-                    {submission.moderation_status === "approved" &&
-                    submission.website_social_opt_in ? (
+                    {isLive(submission) ? (
                       <a
                         href={`/gallery/${submission.id}`}
                         target="_blank"
@@ -463,14 +582,28 @@ export default function AdminPage() {
                       disabled={updating === submission.id}
                       className="px-3 py-1.5 rounded-tl-[10px] rounded-tr-[3px] rounded-br-[10px] rounded-bl-[3px] bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors disabled:opacity-50"
                     >
-                      Approve
+                      Publish
+                    </button>
+                    <button
+                      onClick={() => updateSubmission(submission.id, "moderation_status", "pending")}
+                      disabled={updating === submission.id}
+                      className="px-3 py-1.5 rounded-tl-[6px] rounded-tr-[6px] rounded-br-[14px] rounded-bl-[3px] bg-yellow-100 text-yellow-700 text-xs font-medium hover:bg-yellow-200 transition-colors disabled:opacity-50"
+                    >
+                      Review
                     </button>
                     <button
                       onClick={() => updateSubmission(submission.id, "moderation_status", "rejected")}
                       disabled={updating === submission.id}
                       className="px-3 py-1.5 rounded-tl-[3px] rounded-tr-[10px] rounded-br-[3px] rounded-bl-[10px] bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
                     >
-                      Reject
+                      Hide
+                    </button>
+                    <button
+                      onClick={() => recheckSubmission(submission.id)}
+                      disabled={updating === submission.id}
+                      className="px-3 py-1.5 rounded-tl-[3px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-[3px] bg-surface-warm text-muted text-xs font-medium hover:bg-border-light transition-colors disabled:opacity-50"
+                    >
+                      Recheck
                     </button>
                     <button
                       onClick={() => {
