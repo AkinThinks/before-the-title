@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, max-age=0",
+};
+
 type SubmissionRow = {
   id: string;
   created_at: string;
@@ -50,11 +57,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error("Gallery detail query error:", error);
-      return NextResponse.json({ piece: null }, { status: 500 });
+      return NextResponse.json(
+        { piece: null },
+        { status: 500, headers: noStoreHeaders }
+      );
     }
 
     if (!data) {
-      return NextResponse.json({ piece: null }, { status: 404 });
+      return NextResponse.json(
+        { piece: null },
+        { status: 404, headers: noStoreHeaders }
+      );
     }
 
     if (
@@ -62,11 +75,20 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       !data.website_social_opt_in ||
       !hasPublicArtworkUrl(data.artwork_url)
     ) {
-      return NextResponse.json({ piece: null }, { status: 404 });
+      return NextResponse.json(
+        { piece: null },
+        { status: 404, headers: noStoreHeaders }
+      );
     }
 
-    return NextResponse.json({ piece: toPublicPiece(data) });
+    return NextResponse.json(
+      { piece: toPublicPiece(data) },
+      { headers: noStoreHeaders }
+    );
   }
 
-  return NextResponse.json({ piece: null }, { status: 404 });
+  return NextResponse.json(
+    { piece: null },
+    { status: 404, headers: noStoreHeaders }
+  );
 }

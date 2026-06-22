@@ -16,14 +16,35 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.beforethetitle.art"),
   title: "Before the Title | A Living Archive",
   description:
     "Your reflection becomes art. Your voice becomes story. An ongoing participatory art project about who we are beyond our titles.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Before the Title | A Living Archive",
     description:
       "An ongoing participatory art project about who we are beyond our titles.",
+    url: "/",
+    siteName: "Before the Title",
+    images: [
+      {
+        url: "/hero-bg.jpg",
+        width: 1920,
+        height: 1080,
+        alt: "Before the Title participatory art project",
+      },
+    ],
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Before the Title | A Living Archive",
+    description:
+      "Your reflection becomes art. Your voice becomes story. An ongoing participatory art project about who we are beyond our titles.",
+    images: ["/hero-bg.jpg"],
   },
 };
 

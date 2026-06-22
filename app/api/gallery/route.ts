@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, max-age=0",
+};
+
 type SubmissionRow = {
   id: string;
   created_at: string;
@@ -44,7 +51,10 @@ export async function GET() {
 
     if (error) {
       console.error("Gallery query error:", error);
-      return NextResponse.json({ pieces: [] }, { status: 500 });
+      return NextResponse.json(
+        { pieces: [] },
+        { status: 500, headers: noStoreHeaders }
+      );
     }
 
     const pieces = (data || [])
@@ -56,8 +66,8 @@ export async function GET() {
       )
       .map(toPublicPiece);
 
-    return NextResponse.json({ pieces });
+    return NextResponse.json({ pieces }, { headers: noStoreHeaders });
   }
 
-  return NextResponse.json({ pieces: [] });
+  return NextResponse.json({ pieces: [] }, { headers: noStoreHeaders });
 }

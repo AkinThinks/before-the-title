@@ -20,7 +20,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/gallery")
+    fetch("/api/gallery", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setPieces(data.pieces || []))
       .catch(() => setPieces([]))
@@ -64,8 +64,9 @@ export default function GalleryPage() {
           </div>
         ) : pieces.length === 0 ? (
           <div className="py-20 text-center space-y-5">
-            <p className="text-muted-light font-light">
-              The public archive is opening soon.
+            <p className="mx-auto max-w-sm text-muted-light font-light leading-relaxed">
+              Public selections are being added as participants opt in and pass
+              safety review.
             </p>
             <Button href="/experience">Add Your Reflection</Button>
           </div>

@@ -226,6 +226,10 @@ export default function EventLanding() {
               opened the archive in person; the project now continues online
               and through future gatherings.
             </p>
+            <p className="text-sm text-muted-light font-light leading-relaxed max-w-lg mx-auto">
+              Available for future activations, workshops, exhibitions, and
+              community chapters.
+            </p>
           </div>
 
           <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border">
