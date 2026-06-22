@@ -326,15 +326,15 @@ export default function EventLanding() {
           viewport={{ once: true, margin: "-60px" }}
           custom={0}
           variants={fadeUp}
-          className="grid gap-8 sm:grid-cols-[0.9fr_1.1fr] sm:items-center"
+          className="grid gap-7 sm:grid-cols-[190px_1fr] sm:items-center"
         >
           <div className="space-y-3">
-            <div className="relative mx-auto aspect-[4/5] w-full max-w-[260px] overflow-hidden rounded-tl-[28px] rounded-tr-[8px] rounded-br-[28px] rounded-bl-[8px] border border-border bg-surface shadow-2xl shadow-primary/10 sm:mx-0">
+            <div className="relative mx-auto aspect-[4/5] w-full max-w-[170px] overflow-hidden rounded-tl-[22px] rounded-tr-[7px] rounded-br-[22px] rounded-bl-[7px] border border-border bg-surface shadow-lg shadow-primary/5 sm:mx-0 sm:max-w-[180px]">
               <Image
                 src="/creator/akin-before-the-title.png"
                 alt="Akin as a child"
                 fill
-                sizes="(max-width: 640px) 260px, 240px"
+                sizes="(max-width: 640px) 170px, 180px"
                 className="object-cover"
                 priority={false}
                 unoptimized
@@ -364,12 +364,12 @@ export default function EventLanding() {
               willing to answer honestly.
             </p>
             <a
-              href="https://www.instagram.com/alin.bullion"
+              href="https://www.instagram.com/akin.bullion/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-[44px] items-center justify-center rounded-[10px] border border-primary px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
             >
-              Instagram
+              @akin.bullion
             </a>
           </div>
         </motion.section>

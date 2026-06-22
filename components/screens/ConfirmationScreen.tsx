@@ -88,7 +88,7 @@ export default function ConfirmationScreen() {
               View the Archive
             </Button>
             <a
-              href="https://www.instagram.com/alin.bullion"
+              href="https://www.instagram.com/akin.bullion/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-[56px] w-full items-center justify-center rounded-[10px] bg-transparent px-8 py-4 text-base font-medium text-muted transition-all duration-300 ease-out hover:bg-surface-warm hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
