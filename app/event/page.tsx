@@ -28,7 +28,7 @@ type Sponsor = {
 /**
  * A sponsor logo. Two looks, chosen per logo:
  *  - "card": white card with the logo contained inside, for clean, transparent
- *    wordmark logos (North to Shore, Newark Arts, SalesParrot).
+ *    wordmark logos (North to Shore, Newark Arts).
  *  - "tile": a rounded, edge-to-edge "app-icon" badge, for photo/dark
  *    community logos that look best filling the frame (NJ Code & Coffee,
  *    LaunchBox).
@@ -92,9 +92,12 @@ function LogoCard({
   );
 }
 
-const presentedBy: Sponsor[] = [
+const firstPresentedWith: Sponsor[] = [
   { src: "/logos/north2shore.png", name: "North to Shore", href: "https://northtoshore.com" },
   { src: "/logos/newark-arts.png", name: "Newark Arts", href: "https://www.newarkarts.org" },
+];
+
+const builtWith: Sponsor[] = [
   {
     src: "/logos/salesparrot.png",
     name: "SalesParrot",
@@ -121,16 +124,31 @@ const steps = [
   },
   {
     n: "03",
-    title: "Join the gallery",
-    body: "Your piece takes its place in a living archive of strangers, memory, and who we are beneath our titles.",
+    title: "Join the archive",
+    body: "With permission, safe submissions enter a living archive of strangers, memory, and who we are beneath our titles.",
   },
 ];
 
 const rhythm = [
   { label: "Current prompt", value: "Who were you before the title?" },
   { label: "Participation", value: "Open online, with in-person chapters" },
-  { label: "Archive", value: "Curated public gallery" },
+  { label: "Archive", value: "Safety-reviewed public gallery" },
   { label: "Cadence", value: "New prompts and featured selections over time" },
+];
+
+const origins = [
+  {
+    label: "First presentation",
+    value: "Newark, with North to Shore Festival and Newark Arts",
+  },
+  {
+    label: "Current form",
+    value: "An ongoing online archive with future in-person chapters",
+  },
+  {
+    label: "Curatorial role",
+    value: "Featured selections, project chapters, film, and community activations",
+  },
 ];
 
 export default function EventLanding() {
@@ -170,7 +188,7 @@ export default function EventLanding() {
           >
             An ongoing participatory art project about who we are beyond our
             titles. Step away from the labels you carry, like your job, your role,
-            and your résumé, and answer one honest question. In a few quiet moments,
+            and your resume, and answer one honest question. In a few quiet moments,
             your words become personal artwork that joins a living archive of the
             people who came before you.
           </motion.p>
@@ -185,6 +203,47 @@ export default function EventLanding() {
               View Archive
             </Button>
           </motion.div>
+        </motion.section>
+
+        {/* Project origins */}
+        <motion.section
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          custom={0}
+          variants={fadeUp}
+          className="space-y-7"
+        >
+          <div className="text-center space-y-3">
+            <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
+              Project origins
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl tracking-tight">
+              Begun in Newark, built to keep moving
+            </h2>
+            <p className="text-muted font-light leading-relaxed max-w-xl mx-auto">
+              Before the Title was first presented through a Newark activation
+              with North to Shore Festival and Newark Arts. That first chapter
+              opened the archive in person; the project now continues online
+              and through future gatherings.
+            </p>
+          </div>
+
+          <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border">
+            {origins.map((item) => (
+              <div
+                key={item.label}
+                className="bg-surface/90 px-5 py-5 text-left space-y-2"
+              >
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-light font-light">
+                  {item.label}
+                </p>
+                <p className="font-display text-xl tracking-tight text-foreground">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
         </motion.section>
 
         {/* How it works */}
@@ -300,8 +359,9 @@ export default function EventLanding() {
             </div>
             <p className="text-muted font-light leading-relaxed">
               Before the Title was created and curated as an invitation to
-              remember the person beneath the role, before the resume, before
-              the performance, before the title.
+              remember the person beneath the role. Its first public chapter
+              began in Newark; its next chapters continue wherever people are
+              willing to answer honestly.
             </p>
             <a
               href="https://www.instagram.com/alin.bullion"
@@ -328,7 +388,7 @@ export default function EventLanding() {
               First presented with
             </p>
             <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-10">
-              {presentedBy.map((s) => (
+              {firstPresentedWith.map((s) => (
                 <LogoCard key={s.name} sponsor={s} variant={s.variant || "card"} />
               ))}
             </div>
@@ -339,6 +399,24 @@ export default function EventLanding() {
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
             custom={1}
+            variants={fadeUp}
+            className="space-y-7"
+          >
+            <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
+              Built with
+            </p>
+            <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-10">
+              {builtWith.map((s) => (
+                <LogoCard key={s.name} sponsor={s} variant={s.variant || "card"} />
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            custom={2}
             variants={fadeUp}
             className="space-y-7"
           >
@@ -354,8 +432,9 @@ export default function EventLanding() {
         </section>
 
         <p className="text-center text-xs text-muted-light font-light leading-relaxed max-w-xs mx-auto">
-          An ongoing art project about identity, memory, and the selves we set
-          aside.
+          First presented in Newark with North to Shore Festival and Newark
+          Arts. Continuing as an ongoing art project about identity, memory, and
+          the selves we set aside.
         </p>
       </div>
     </main>
