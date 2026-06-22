@@ -30,8 +30,7 @@ type Sponsor = {
  *  - "card": white card with the logo contained inside, for clean, transparent
  *    wordmark logos (North to Shore, Newark Arts).
  *  - "tile": a rounded, edge-to-edge "app-icon" badge, for photo/dark
- *    community logos that look best filling the frame (NJ Code & Coffee,
- *    LaunchBox).
+ *    support logos that look best filling the frame.
  * If a file is missing from /public/logos/ we fall back to the name.
  */
 function LogoCard({
@@ -106,7 +105,7 @@ const builtWith: Sponsor[] = [
   },
 ];
 
-const supportedBy: Sponsor[] = [
+const platformAndCommunitySupport: Sponsor[] = [
   { src: "/logos/njcodecoffee.png", name: "NJ Code & Coffee", href: "https://luma.com/njcodecoffee" },
   { src: "/logos/launchbox.png", name: "LaunchBox", href: "https://www.launchbox.live/agency" },
 ];
@@ -351,7 +350,7 @@ export default function EventLanding() {
             </p>
             <div className="space-y-3">
               <h2 className="font-display text-3xl sm:text-4xl tracking-tight">
-                Akin Tunde
+                Akin Opaleye
               </h2>
               <p className="text-sm tracking-[0.16em] uppercase text-primary font-medium">
                 Project and Experience Creator
@@ -403,7 +402,7 @@ export default function EventLanding() {
             className="space-y-7"
           >
             <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
-              Built with
+              Built by the team at
             </p>
             <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-10">
               {builtWith.map((s) => (
@@ -421,10 +420,10 @@ export default function EventLanding() {
             className="space-y-7"
           >
             <p className="text-xs tracking-[0.28em] uppercase text-muted-light font-light">
-              With support from our communities
+              Community and platform support
             </p>
             <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-10">
-              {supportedBy.map((s) => (
+              {platformAndCommunitySupport.map((s) => (
                 <LogoCard key={s.name} sponsor={s} variant="tile" />
               ))}
             </div>
