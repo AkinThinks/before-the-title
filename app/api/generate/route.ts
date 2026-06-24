@@ -27,6 +27,91 @@ function getPublicBaseUrl(request: NextRequest) {
   return request.nextUrl.origin;
 }
 
+function hashString(value: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function pickVariant<T>(items: T[], seed: number, offset = 0) {
+  return items[(seed + offset) % items.length];
+}
+
+const visualLanguages = [
+  "architectural memory map: rooms, thresholds, windows, passageways, and small constructed worlds",
+  "textile memory: woven threads, quilt-like fragments, embroidered edges, and soft handmade layers",
+  "botanical inner landscape: roots, petals, seeds, leaves, and organic growth forms as emotional symbols",
+  "cinematic shadow play: window light, silhouettes, reflections, atmosphere, and intimate stage-like space",
+  "topographic dream map: contour lines, rivers of color, islands, paths, and terrain shaped by memory",
+  "ceramic relief: sculptural clay surfaces, carved marks, raised forms, and tactile handmade depth",
+  "street-mural abstraction: bold shapes, layered walls, weathered color, and public-memory energy",
+  "constellation archive: night-sky diagrams, luminous points, orbiting shapes, and quiet cosmic structure",
+  "paper theater: cut-paper depth, miniature sets, curtains, portals, and dimensional storybook space",
+  "sound made visible: rhythm lines, pulses, echoes, waveforms, and color fields reacting like music",
+  "object shrine: ordinary childhood objects arranged like sacred evidence of a younger self",
+  "water memory: ripples, translucent washes, submerged shapes, reflection, and fluid transformation",
+];
+
+const compositions = [
+  "asymmetrical, with the main emotional weight pushed toward one edge",
+  "bird's-eye view, like looking down into a private world or remembered map",
+  "close and tactile, as if the viewer is almost touching the surface",
+  "wide and cinematic, with a small human trace inside a larger atmosphere",
+  "radial, with memory fragments orbiting a quiet center",
+  "split-level, showing two emotional states in the same image without a literal before-and-after",
+  "diagonal movement across the frame, like a path being discovered",
+  "layered foreground, middle ground, and background, like a small stage of memory",
+];
+
+const materialDirections = [
+  "transparent watercolor, graphite dust, and soft paper grain",
+  "oil pastel, dry brush, and visible hand-smudged texture",
+  "risograph-like ink layers with imperfect registration and grain",
+  "cyanotype-inspired light, deep blues, and photographic softness",
+  "collaged paper, torn edges, translucent vellum, and subtle shadows",
+  "encaustic wax, scratched marks, and luminous depth",
+  "ceramic glaze, matte clay, and carved surface details",
+  "soft digital painting mixed with scanned handmade textures",
+];
+
+const paletteAccents = [
+  "midnight blue, coastal teal, warm ivory, and a restrained sunrise coral accent",
+  "deep green, mist gray, soft gold, and small notes of clay red",
+  "indigo, sea glass, charcoal, pale cream, and muted copper",
+  "forest green, moonlit blue, pearl white, and a single amber glow",
+  "ink blue, weathered sage, cloud white, and dusty rose",
+  "soft black, eucalyptus, cool silver, and warm ochre",
+];
+
+function buildImagePrompt(reflection: string, submissionId: string) {
+  const seed = hashString(`${submissionId}:${reflection}`);
+  const visualLanguage = pickVariant(visualLanguages, seed);
+  const composition = pickVariant(compositions, seed, 3);
+  const materialDirection = pickVariant(materialDirections, seed, 7);
+  const paletteAccent = pickVariant(paletteAccents, seed, 11);
+
+  return `Create a singular emotional artwork inspired by this reflection: "${reflection}".
+
+The artwork belongs to "Before the Title," an ongoing participatory art project about identity before public labels.
+
+Primary visual language for this piece: ${visualLanguage}.
+Composition: ${composition}.
+Material and texture: ${materialDirection}.
+Palette: ${paletteAccent}. It may still feel related to the wider Before the Title archive, but this piece must have its own distinct visual identity.
+
+Anchor the image in the concrete emotional clues of the reflection. If the reflection suggests childhood, movement, sound, objects, places, questions, light, nature, building, maps, silence, or imagination, make that specific clue drive the image.
+
+Human presence should be suggested through gesture, scale, trace, silhouette, negative space, or objects touched by a person. Do not make a realistic portrait unless the reflection clearly calls for one.
+
+Avoid a repeated template. Do not default to the same centered glowing figure, the same abstract swirl, or the same generic archive look. This should feel like one distinct artwork within a larger living collection.
+
+No text, no words, no letters, no logos, no readable symbols.
+Feel: intimate, luminous, emotionally grounded, communal, and timeless.`;
+}
+
 export async function POST(request: NextRequest) {
   // Read the body once up front so the catch block can still build a fallback.
   let reflection = "";
@@ -73,16 +158,7 @@ export async function POST(request: NextRequest) {
     const galleryUrl = `${getPublicBaseUrl(request)}/gallery/${submissionId}`;
 
     if (apiKey) {
-      const prompt = `Create an abstract, emotional artwork inspired by this reflection: "${reflection}".
-The artwork belongs to "Before the Title," an ongoing participatory art project about identity before public labels.
-Style: a layered painterly abstraction, like memory becoming a public artwork.
-Visual motifs: childhood memory, soft thresholds, handwritten feeling, unfolding paths, quiet light, and traces of community without literal landmarks.
-Human presence: suggested through silhouette, aura, gesture, or negative space, not a realistic face.
-Collection palette: midnight blue, coastal teal, deep green, warm ivory, soft gold, and restrained clay red.
-Feel: intimate, luminous, communal, timeless, and emotionally grounded.
-Composition: one clear focal presence with flowing organic layers.
-No text, no words, no letters, no logos.
-Make it feel like one artwork in a larger living archive of people remembering who they were before the world named them.`;
+      const prompt = buildImagePrompt(reflection, submissionId);
 
       const response = await fetch(
         "https://api.openai.com/v1/images/generations",
