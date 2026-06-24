@@ -26,7 +26,7 @@ export default function GalleryDetailPage() {
   useEffect(() => {
     if (!params.id) return;
 
-    fetch(`/api/gallery/${encodeURIComponent(params.id)}`)
+    fetch(`/api/gallery/${encodeURIComponent(params.id)}`, { cache: "no-store" })
       .then((res) => {
         if (!res.ok) return { piece: null };
         return res.json();

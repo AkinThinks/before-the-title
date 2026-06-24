@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { fallbackGalleryPieces } from "@/lib/fallbackGallery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,6 +8,13 @@ export const revalidate = 0;
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
 };
+
+function galleryResponse(pieces: ReturnType<typeof toPublicPiece>[]) {
+  return NextResponse.json(
+    { pieces: pieces.length > 0 ? pieces : fallbackGalleryPieces },
+    { headers: noStoreHeaders }
+  );
+}
 
 type SubmissionRow = {
   id: string;
@@ -51,10 +59,7 @@ export async function GET() {
 
     if (error) {
       console.error("Gallery query error:", error);
-      return NextResponse.json(
-        { pieces: [] },
-        { status: 500, headers: noStoreHeaders }
-      );
+      return galleryResponse([]);
     }
 
     const pieces = (data || [])
@@ -66,8 +71,8 @@ export async function GET() {
       )
       .map(toPublicPiece);
 
-    return NextResponse.json({ pieces }, { headers: noStoreHeaders });
+    return galleryResponse(pieces);
   }
 
-  return NextResponse.json({ pieces: [] }, { headers: noStoreHeaders });
+  return galleryResponse([]);
 }

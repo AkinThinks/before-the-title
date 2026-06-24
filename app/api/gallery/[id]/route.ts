@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { getFallbackGalleryPiece } from "@/lib/fallbackGallery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,6 +8,22 @@ export const revalidate = 0;
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
 };
+
+function notFoundOrFallback(id: string) {
+  const fallbackPiece = getFallbackGalleryPiece(id);
+
+  if (fallbackPiece) {
+    return NextResponse.json(
+      { piece: fallbackPiece },
+      { headers: noStoreHeaders }
+    );
+  }
+
+  return NextResponse.json(
+    { piece: null },
+    { status: 404, headers: noStoreHeaders }
+  );
+}
 
 type SubmissionRow = {
   id: string;
@@ -57,17 +74,11 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error("Gallery detail query error:", error);
-      return NextResponse.json(
-        { piece: null },
-        { status: 500, headers: noStoreHeaders }
-      );
+      return notFoundOrFallback(id);
     }
 
     if (!data) {
-      return NextResponse.json(
-        { piece: null },
-        { status: 404, headers: noStoreHeaders }
-      );
+      return notFoundOrFallback(id);
     }
 
     if (
@@ -88,7 +99,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   return NextResponse.json(
-    { piece: null },
-    { status: 404, headers: noStoreHeaders }
+    { piece: getFallbackGalleryPiece(id) },
+    {
+      status: getFallbackGalleryPiece(id) ? 200 : 404,
+      headers: noStoreHeaders,
+    }
   );
 }
