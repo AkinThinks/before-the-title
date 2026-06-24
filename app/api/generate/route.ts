@@ -46,13 +46,9 @@ const visualLanguages = [
   "botanical inner landscape: roots, petals, seeds, leaves, and organic growth forms as emotional symbols",
   "cinematic shadow play: window light, silhouettes, reflections, atmosphere, and intimate stage-like space",
   "topographic dream map: contour lines, rivers of color, islands, paths, and terrain shaped by memory",
-  "ceramic relief: sculptural clay surfaces, carved marks, raised forms, and tactile handmade depth",
-  "street-mural abstraction: bold shapes, layered walls, weathered color, and public-memory energy",
-  "constellation archive: night-sky diagrams, luminous points, orbiting shapes, and quiet cosmic structure",
   "paper theater: cut-paper depth, miniature sets, curtains, portals, and dimensional storybook space",
   "sound made visible: rhythm lines, pulses, echoes, waveforms, and color fields reacting like music",
   "object shrine: ordinary childhood objects arranged like sacred evidence of a younger self",
-  "water memory: ripples, translucent washes, submerged shapes, reflection, and fluid transformation",
 ];
 
 const compositions = [
@@ -69,11 +65,9 @@ const compositions = [
 const materialDirections = [
   "transparent watercolor, graphite dust, and soft paper grain",
   "oil pastel, dry brush, and visible hand-smudged texture",
-  "risograph-like ink layers with imperfect registration and grain",
   "cyanotype-inspired light, deep blues, and photographic softness",
   "collaged paper, torn edges, translucent vellum, and subtle shadows",
   "encaustic wax, scratched marks, and luminous depth",
-  "ceramic glaze, matte clay, and carved surface details",
   "soft digital painting mixed with scanned handmade textures",
 ];
 
@@ -97,16 +91,20 @@ function buildImagePrompt(reflection: string, submissionId: string) {
 
 The artwork belongs to "Before the Title," an ongoing participatory art project about identity before public labels.
 
+Shared collection signature: soft luminous memory, layered handmade texture, quiet emotional abstraction, subtle human trace, and a sense of threshold between childhood and adulthood.
+
 Primary visual language for this piece: ${visualLanguage}.
 Composition: ${composition}.
 Material and texture: ${materialDirection}.
-Palette: ${paletteAccent}. It may still feel related to the wider Before the Title archive, but this piece must have its own distinct visual identity.
+Palette: ${paletteAccent}. Keep the overall archive family rooted in midnight blue, coastal teal, deep green, warm ivory, muted gold, and one restrained accent. Do not let the accent color dominate.
 
 Anchor the image in the concrete emotional clues of the reflection. If the reflection suggests childhood, movement, sound, objects, places, questions, light, nature, building, maps, silence, or imagination, make that specific clue drive the image.
 
 Human presence should be suggested through gesture, scale, trace, silhouette, negative space, or objects touched by a person. Do not make a realistic portrait unless the reflection clearly calls for one.
 
-Avoid a repeated template. Do not default to the same centered glowing figure, the same abstract swirl, or the same generic archive look. This should feel like one distinct artwork within a larger living collection.
+Balance: about 70% collection cohesion and 30% individual variation. Vary motif, composition, and texture, but keep the emotional atmosphere and color family recognizably connected to the archive.
+
+Avoid a repeated template. Do not default to the same centered glowing figure, the same abstract swirl, or the same generic archive look.
 
 No text, no words, no letters, no logos, no readable symbols.
 Feel: intimate, luminous, emotionally grounded, communal, and timeless.`;
