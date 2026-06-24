@@ -6,7 +6,13 @@ import { motion } from "framer-motion";
 
 const PW_KEY = "btt_admin_pw";
 
-type AdminTab = "all" | "live" | "review" | "approved" | "rejected";
+type AdminTab =
+  | "all"
+  | "live"
+  | "review"
+  | "approved"
+  | "rejected"
+  | "recovery";
 type ModerationStatus = "pending" | "approved" | "rejected";
 type SafetyStatus = "unchecked" | "safe" | "review" | "rejected" | "error";
 
@@ -47,6 +53,23 @@ interface Stats {
   archiveLive: number;
 }
 
+interface RecoveryStorageArtwork {
+  id: string;
+  file: string | null;
+  original_file: string | null;
+  artwork_url: string;
+  original_url: string | null;
+  created_at: string | null;
+  size: number | null;
+}
+
+interface RecoveryData {
+  privateSubmissions: Submission[];
+  reviewSubmissions: Submission[];
+  storageOnlyArtworks: RecoveryStorageArtwork[];
+  storageError: string | null;
+}
+
 function hasPublicArtworkUrl(url: string | null) {
   return Boolean(url && !url.startsWith("data:"));
 }
@@ -74,9 +97,25 @@ function safetyClass(status: SafetyStatus | null) {
   return "bg-surface-warm text-muted";
 }
 
+function formatDate(value: string | null) {
+  if (!value) return "Unknown date";
+  return new Date(value).toLocaleDateString();
+}
+
+function formatFileSize(size: number | null) {
+  if (!size) return "Unknown size";
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>("all");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [recovery, setRecovery] = useState<RecoveryData>({
+    privateSubmissions: [],
+    reviewSubmissions: [],
+    storageOnlyArtworks: [],
+    storageError: null,
+  });
   const [stats, setStats] = useState<Stats>({
     total: 0,
     pending: 0,
@@ -103,11 +142,18 @@ export default function AdminPage() {
     const pw =
       typeof window !== "undefined" ? sessionStorage.getItem(PW_KEY) || "" : "";
     try {
-      const [listRes, statsRes] = await Promise.all([
+      const [listRes, statsRes, recoveryRes] = await Promise.all([
         fetch("/api/admin?action=list", { headers: { "x-admin-password": pw } }),
         fetch("/api/admin?action=stats", { headers: { "x-admin-password": pw } }),
+        fetch("/api/admin?action=recovery", {
+          headers: { "x-admin-password": pw },
+        }),
       ]);
-      if (listRes.status === 401 || statsRes.status === 401) {
+      if (
+        listRes.status === 401 ||
+        statsRes.status === 401 ||
+        recoveryRes.status === 401
+      ) {
         sessionStorage.removeItem(PW_KEY);
         setAuthed(false);
         setAuthError(true);
@@ -116,13 +162,23 @@ export default function AdminPage() {
       }
       const listData = await listRes.json();
       const statsData = await statsRes.json();
-      if (!listRes.ok || !statsRes.ok) {
+      const recoveryData = await recoveryRes.json();
+      if (!listRes.ok || !statsRes.ok || !recoveryRes.ok) {
         throw new Error(
-          listData.error || statsData.error || "Could not load admin data."
+          listData.error ||
+            statsData.error ||
+            recoveryData.error ||
+            "Could not load admin data."
         );
       }
       setSubmissions(listData.submissions || []);
       setStats(statsData);
+      setRecovery({
+        privateSubmissions: recoveryData.privateSubmissions || [],
+        reviewSubmissions: recoveryData.reviewSubmissions || [],
+        storageOnlyArtworks: recoveryData.storageOnlyArtworks || [],
+        storageError: recoveryData.storageError || null,
+      });
       setLoadError("");
       setAuthed(true);
     } catch (error) {
@@ -245,11 +301,17 @@ export default function AdminPage() {
   };
 
   const filtered = submissions.filter((s) => {
+    if (activeTab === "recovery") return false;
     if (activeTab === "all") return true;
     if (activeTab === "live") return isLive(s);
     if (activeTab === "review") return s.moderation_status === "pending";
     return s.moderation_status === activeTab;
   });
+
+  const recoveryCount =
+    recovery.privateSubmissions.length +
+    recovery.reviewSubmissions.length +
+    recovery.storageOnlyArtworks.length;
 
   const exportCSV = () => {
     const csvCell = (value: unknown) =>
@@ -304,6 +366,286 @@ export default function AdminPage() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
+
+  const renderRecoverySubmission = (submission: Submission) => (
+    <div
+      key={submission.id}
+      className="bg-surface rounded-tl-[18px] rounded-tr-[6px] rounded-br-[18px] rounded-bl-[6px] border border-border p-5"
+    >
+      <div className="flex flex-col lg:flex-row gap-5">
+        <div className="flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-light">
+            <span className="px-2 py-0.5 rounded-full bg-surface-warm text-muted">
+              {formatDate(submission.created_at)}
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded-full font-medium ${
+                submission.website_social_opt_in
+                  ? "bg-green-100 text-green-700"
+                  : "bg-yellow-100 text-yellow-700"
+              }`}
+            >
+              {submission.website_social_opt_in
+                ? "Public permission: Yes"
+                : "Public permission: No"}
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded-full font-medium ${safetyClass(
+                submission.safety_status
+              )}`}
+            >
+              {safetyCopy(submission.safety_status)}
+            </span>
+          </div>
+
+          <p className="text-lg leading-relaxed">
+            &ldquo;{submission.reflection}&rdquo;
+          </p>
+
+          <div className="flex flex-wrap gap-4 text-sm text-muted-light">
+            <span>ID: {submission.id}</span>
+            {submission.name && <span>Name: {submission.name}</span>}
+            {submission.social_handle && (
+              <span>Social: {submission.social_handle}</span>
+            )}
+            {submission.email && <span>Email: {submission.email}</span>}
+          </div>
+
+          <p className="text-xs text-muted-light font-light leading-relaxed">
+            Keep private unless permission is confirmed. Use this row to inspect
+            the recovered artwork, rerun safety, or add curator notes.
+          </p>
+        </div>
+
+        <div className="w-full lg:w-36 shrink-0">
+          {submission.artwork_url && (
+            <a
+              href={submission.artwork_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block group"
+            >
+              <div className="relative aspect-square overflow-hidden rounded-tl-[14px] rounded-tr-[4px] rounded-br-[14px] rounded-bl-[4px] border border-border bg-background">
+                <Image
+                  src={submission.artwork_url}
+                  alt="Recovered artwork"
+                  fill
+                  sizes="144px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  unoptimized
+                />
+              </div>
+              <span className="mt-2 block text-center text-xs text-muted-light group-hover:text-muted">
+                Open image
+              </span>
+            </a>
+          )}
+        </div>
+
+        <div className="flex flex-row lg:flex-col gap-2">
+          <button
+            onClick={() => recheckSubmission(submission.id)}
+            disabled={updating === submission.id}
+            className="px-3 py-1.5 rounded-tl-[3px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-[3px] bg-surface-warm text-muted text-xs font-medium hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            Recheck
+          </button>
+          <button
+            onClick={() => {
+              const notes = prompt("Curator notes:", submission.curator_notes);
+              if (notes !== null) {
+                updateSubmission(submission.id, "curator_notes", notes);
+              }
+            }}
+            className="px-3 py-1.5 rounded-tl-[6px] rounded-tr-[6px] rounded-br-[14px] rounded-bl-[3px] bg-surface-warm text-muted text-xs font-medium hover:bg-border-light transition-colors"
+          >
+            Notes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderRecovery = () => (
+    <div className="space-y-8">
+      <div className="bg-surface rounded-tl-[20px] rounded-tr-[6px] rounded-br-[20px] rounded-bl-[6px] border border-border p-6 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl tracking-tight">
+              Recovery Bin
+            </h2>
+            <p className="text-sm text-muted font-light leading-relaxed max-w-2xl">
+              Private admin review for pieces created before the archive flow
+              was fully stable. Nothing here is published automatically; public
+              placement still requires permission and safety clearance.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-surface-warm px-3 py-2">
+              <p className="text-xl font-semibold text-foreground">
+                {recovery.privateSubmissions.length}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-light">
+                Private
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface-warm px-3 py-2">
+              <p className="text-xl font-semibold text-foreground">
+                {recovery.reviewSubmissions.length}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-light">
+                Review
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface-warm px-3 py-2">
+              <p className="text-xl font-semibold text-foreground">
+                {recovery.storageOnlyArtworks.length}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-light">
+                Storage
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {recovery.storageError && (
+          <p className="text-sm text-yellow-700 font-light">
+            Storage scan warning: {recovery.storageError}
+          </p>
+        )}
+      </div>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h3 className="font-display text-xl tracking-tight">
+              Database-backed, private
+            </h3>
+            <p className="text-sm text-muted-light font-light">
+              These have rows, reflections, and images, but no public archive
+              permission.
+            </p>
+          </div>
+          <span className="text-sm text-muted-light">
+            {recovery.privateSubmissions.length}
+          </span>
+        </div>
+
+        {recovery.privateSubmissions.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface/70 p-5 text-sm text-muted-light">
+            No private recoverable submissions found.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recovery.privateSubmissions.map(renderRecoverySubmission)}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h3 className="font-display text-xl tracking-tight">
+              Database-backed, needs review
+            </h3>
+            <p className="text-sm text-muted-light font-light">
+              These have images but are pending or rejected, so they stay hidden.
+            </p>
+          </div>
+          <span className="text-sm text-muted-light">
+            {recovery.reviewSubmissions.length}
+          </span>
+        </div>
+
+        {recovery.reviewSubmissions.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface/70 p-5 text-sm text-muted-light">
+            No image-backed submissions currently need review.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recovery.reviewSubmissions.map(renderRecoverySubmission)}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h3 className="font-display text-xl tracking-tight">
+              Storage-only artworks
+            </h3>
+            <p className="text-sm text-muted-light font-light">
+              Images found in Supabase Storage with no matching submission row.
+              Treat these as visual recovery references only.
+            </p>
+          </div>
+          <span className="text-sm text-muted-light">
+            {recovery.storageOnlyArtworks.length}
+          </span>
+        </div>
+
+        {recovery.storageOnlyArtworks.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface/70 p-5 text-sm text-muted-light">
+            No storage-only artworks found.
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recovery.storageOnlyArtworks.map((artwork) => (
+              <div
+                key={artwork.id}
+                className="overflow-hidden rounded-tl-[18px] rounded-tr-[6px] rounded-br-[18px] rounded-bl-[6px] border border-border bg-surface"
+              >
+                <a
+                  href={artwork.artwork_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block"
+                >
+                  <div className="relative aspect-square bg-background">
+                    <Image
+                      src={artwork.artwork_url}
+                      alt="Storage-only recovered artwork"
+                      fill
+                      sizes="(max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      unoptimized
+                    />
+                  </div>
+                </a>
+                <div className="space-y-2 p-4">
+                  <div className="flex flex-wrap gap-2 text-[11px] text-muted-light">
+                    <span className="rounded-full bg-surface-warm px-2 py-0.5">
+                      {formatDate(artwork.created_at)}
+                    </span>
+                    <span className="rounded-full bg-surface-warm px-2 py-0.5">
+                      {formatFileSize(artwork.size)}
+                    </span>
+                  </div>
+                  <p className="break-all text-xs text-muted-light">
+                    {artwork.id}
+                  </p>
+                  <p className="text-sm text-muted font-light leading-relaxed">
+                    No reflection, contact, or consent row was found. Do not add
+                    to the public archive without manual confirmation.
+                  </p>
+                  {artwork.original_url && (
+                    <a
+                      href={artwork.original_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex text-xs font-medium text-primary hover:text-primary-light"
+                    >
+                      Open original file
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 
   if (!authed) {
     return (
@@ -397,7 +739,16 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {(["all", "live", "review", "approved", "rejected"] as const).map((tab) => (
+          {(
+            [
+              "all",
+              "live",
+              "review",
+              "approved",
+              "rejected",
+              "recovery",
+            ] as const
+          ).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -409,6 +760,8 @@ export default function AdminPage() {
             >
               {tab === "review"
                 ? "Review"
+                : tab === "recovery"
+                ? `Recovery (${recoveryCount})`
                 : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
@@ -425,6 +778,8 @@ export default function AdminPage() {
               Check the production environment variables, then redeploy.
             </p>
           </div>
+        ) : activeTab === "recovery" ? (
+          renderRecovery()
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-muted-light">
             <p className="font-light">No submissions in this category yet.</p>

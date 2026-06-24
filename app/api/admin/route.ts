@@ -20,6 +20,23 @@ function hasPublicArtworkUrl(url: unknown) {
   return typeof url === "string" && url.length > 0 && !url.startsWith("data:");
 }
 
+type StorageRecoveryFile = {
+  name: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  metadata?: {
+    size?: number;
+  } | null;
+};
+
+function baseStorageId(fileName: string) {
+  return fileName.replace(/-original\.png$/, "").replace(/\.png$/, "");
+}
+
+function isOriginalStorageFile(fileName: string) {
+  return fileName.endsWith("-original.png");
+}
+
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) return unauthorized();
 
@@ -33,6 +50,133 @@ export async function GET(request: NextRequest) {
       hasAdminPassword: Boolean(process.env.ADMIN_PASSWORD),
       moderationModel: getModerationModel(),
       runtime: process.env.NODE_ENV || "development",
+    });
+  }
+
+  if (action === "recovery") {
+    const db = supabaseAdmin;
+    if (db) {
+      const { data: submissions, error } = await db
+        .from("submissions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Supabase recovery query error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      const rows = submissions || [];
+      const rowIds = new Set(rows.map((row) => row.id));
+
+      const privateSubmissions = rows.filter(
+        (row) =>
+          row.moderation_status === "approved" &&
+          !row.website_social_opt_in &&
+          hasPublicArtworkUrl(row.artwork_url)
+      );
+
+      const reviewSubmissions = rows.filter(
+        (row) =>
+          row.moderation_status !== "approved" &&
+          hasPublicArtworkUrl(row.artwork_url)
+      );
+
+      const { data: files, error: storageError } = await db.storage
+        .from("artworks")
+        .list("", {
+          limit: 1000,
+          sortBy: { column: "created_at", order: "asc" },
+        });
+
+      const groups = new Map<
+        string,
+        {
+          id: string;
+          artworkFile: StorageRecoveryFile | null;
+          originalFile: StorageRecoveryFile | null;
+        }
+      >();
+
+      if (storageError) {
+        console.error("Supabase recovery storage error:", storageError);
+      }
+
+      (files || [])
+        .filter((file) => file.name.endsWith(".png"))
+        .forEach((file) => {
+          const typedFile = file as StorageRecoveryFile;
+          const id = baseStorageId(typedFile.name);
+          if (rowIds.has(id)) return;
+
+          const group = groups.get(id) || {
+            id,
+            artworkFile: null,
+            originalFile: null,
+          };
+
+          if (isOriginalStorageFile(typedFile.name)) {
+            group.originalFile = typedFile;
+          } else {
+            group.artworkFile = typedFile;
+          }
+
+          groups.set(id, group);
+        });
+
+      const storageOnlyArtworks = Array.from(groups.values())
+        .map((group) => {
+          const artworkFile = group.artworkFile || group.originalFile;
+          const originalFile = group.originalFile;
+          const artworkUrl = artworkFile
+            ? db.storage.from("artworks").getPublicUrl(artworkFile.name).data
+                .publicUrl
+            : null;
+          const originalUrl = originalFile
+            ? db.storage.from("artworks").getPublicUrl(originalFile.name).data
+                .publicUrl
+            : null;
+
+          return {
+            id: group.id,
+            file: artworkFile?.name || null,
+            original_file: originalFile?.name || null,
+            artwork_url: artworkUrl,
+            original_url: originalUrl,
+            created_at:
+              artworkFile?.created_at ||
+              originalFile?.created_at ||
+              artworkFile?.updated_at ||
+              originalFile?.updated_at ||
+              null,
+            size: artworkFile?.metadata?.size || null,
+          };
+        })
+        .filter((item) => item.artwork_url);
+
+      return NextResponse.json({
+        privateSubmissions,
+        reviewSubmissions,
+        storageOnlyArtworks,
+        storageError: storageError?.message || null,
+      });
+    }
+
+    if (getSupabaseServerConfigStatus().hasSupabaseUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Supabase service role is not configured. Add SUPABASE_SERVICE_ROLE_KEY in production.",
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      privateSubmissions: [],
+      reviewSubmissions: [],
+      storageOnlyArtworks: [],
+      storageError: null,
     });
   }
 
